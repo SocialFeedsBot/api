@@ -1,0 +1,28 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "**GET** `/feeds`\r   This will return all the feeds setup.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/discordfeeds/api.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/discordfeeds/api/issues"
+  },
+  "homepage": "https://gitlab.com/discordfeeds/api#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "eris": "^0.11.0",
+    "express": "^4.17.1",
+    "ioredis": "^4.14.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^3.3.3",
+    "superagent": "^5.1.1"
+  }
+}

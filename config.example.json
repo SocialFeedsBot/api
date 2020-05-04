@@ -1,0 +1,6 @@
+{
+  "token": "bot token",
+  "port": 3000,
+  "databaseURL": "mongodb://ip:port/database",
+  "jwtSecret": "super secret password"
+}
