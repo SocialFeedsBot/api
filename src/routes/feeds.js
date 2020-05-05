@@ -103,7 +103,10 @@ router.post('/new', async (req, res) => {
     }
   } else if (req.body.feed.type === 'reddit') {
     try {
-      await superagent.get(`https://reddit.com/r/${req.body.feed.url}`);
+      const res = await superagent.get(`https://reddit.com/r/${req.body.feed.url}/about.json`);
+      if (res.body.data.over18 && !req.body.nsfw) {
+        res.status(400).json({ success: false, error: 'Subreddit is over 18 and the specified channel is not an NSFW channel' });
+      }
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid Subreddit name' });
       return;
