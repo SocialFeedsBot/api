@@ -82,6 +82,9 @@ router.post('/new', async (req, res) => {
     }
   } else if (req.body.feed.type === 'twitter') {
     try {
+      if (req.body.feed.url.startsWith('https')) {
+        throw new Error('');
+      }
       await superagent.get(`https://twitter.com/${req.body.feed.url}`);
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid Twitter Account' });
@@ -103,8 +106,8 @@ router.post('/new', async (req, res) => {
     }
   } else if (req.body.feed.type === 'reddit') {
     try {
-      const res = await superagent.get(`https://reddit.com/r/${req.body.feed.url}/about.json`);
-      if (res.body.data.over18 && !req.body.nsfw) {
+      const a = await superagent.get(`https://reddit.com/r/${req.body.feed.url}/about.json`);
+      if (a.body.data.over18 && !req.body.nsfw) {
         res.status(400).json({ success: false, error: 'Subreddit is over 18 and the specified channel is not an NSFW channel' });
       }
     } catch(err) {
