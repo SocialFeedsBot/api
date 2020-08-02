@@ -82,10 +82,7 @@ router.post('/new', async (req, res) => {
     }
   } else if (req.body.feed.type === 'twitter') {
     try {
-      if (req.body.feed.url.startsWith('https')) {
-        throw new Error('');
-      }
-      await superagent.get(`https://twitter.com/${req.body.feed.url}`);
+      await superagent.get(`https://api.twitter.com/1.1/statuses/user_timeline?screen_name=${req.body.feed.url}`);
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid Twitter Account' });
       return;
