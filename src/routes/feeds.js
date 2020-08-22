@@ -75,35 +75,35 @@ router.post('/new', async (req, res) => {
   // Validate whether or not the URL is correct.
   if (req.body.feed.type === 'youtube') {
     try {
-      await superagent.get(`https://youtube.com/channel/${req.body.feed.url}`);
+      await superagent.get(`https://youtube.com/channel/${req.body.feed.url}`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid YouTube Channel' });
       return;
     }
   } else if (req.body.feed.type === 'twitter') {
     try {
-      await superagent.get(`https://api.twitter.com/1.1/statuses/user_timeline?screen_name=${req.body.feed.url}`);
+      await superagent.get(`https://api.twitter.com/1.1/statuses/user_timeline?screen_name=${req.body.feed.url}`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid Twitter Account' });
       return;
     }
   } else if (req.body.feed.type === 'twitch') {
     try {
-      await superagent.get(`https://twitch.tv/${req.body.feed.url}`);
+      await superagent.get(`https://twitch.tv/${req.body.feed.url}`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid Twitch Channel' });
       return;
     }
   } else if (req.body.feed.type === 'rss') {
     try {
-      await superagent.get(req.body.feed.url);
+      await superagent.get(req.body.feed.url).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid RSS URL' });
       return;
     }
   } else if (req.body.feed.type === 'reddit') {
     try {
-      const a = await superagent.get(`https://reddit.com/r/${req.body.feed.url}/about.json`);
+      const a = await superagent.get(`https://reddit.com/r/${req.body.feed.url}/about.json`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
       if (a.body.data.over18 && !req.body.nsfw) {
         res.status(400).json({ success: false, error: 'Subreddit is over 18 and the specified channel is not an NSFW channel' });
       }
