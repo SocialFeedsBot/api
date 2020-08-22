@@ -179,7 +179,7 @@ router.delete('/delete', async (req, res) => {
 
   let document = await req.app.locals.db.collection('feeds').findOne({ _id: req.body.webhook.id });
   if (!document) {
-    res.status(404).json();
+    res.status(404).json({ success: false, error: 'Webhook is non existant' });
     return;
   }
 
@@ -187,6 +187,9 @@ router.delete('/delete', async (req, res) => {
   const index = document.feeds.findIndex(feed => feed.url === req.body.feed.url && feed.type === req.body.feed.type);
   if (index > -1) {
     document.feeds.splice(index, 1);
+  } else {
+    res.status(404).json({ success: false, error: 'Feed is non existant' });
+    return;
   }
 
   await req.app.locals.db.collection('feeds').updateOne({ _id: req.body.webhook.id }, { $set: document });
