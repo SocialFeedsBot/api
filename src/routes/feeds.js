@@ -15,22 +15,14 @@ router.get('/', async (req, res) => {
   }
 
   let feeds = await req.app.locals.db.collection('feeds').find().toArray();
-  feeds = (await Promise.all(feeds.map(async feed => await Promise.all(feed.feeds.map(async f => {
-    let info;
-    try {
-      info = await req.app.locals.client.getWebhook(feed._id, feed.token);
-    } catch(e) {
-      return null;
-    }
-
+  feeds = feeds.map(feed => feed.feeds.map(f => {
     return {
       type: f.type,
       url: f.url,
-      channelID: info.channel_id,
       guildID: feed.guildID,
       webhook: { id: feed._id, token: feed.token }
     };
-  }))))).flat().filter(a => a);
+  })).flat().filter(a => a);
 
   res.status(200).json(feeds);
 });
