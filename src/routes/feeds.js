@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
       guildID: feed.guildID,
       webhook: { id: feed._id, token: feed.token }
     };
-  })))).filter(a => a);
+  })))).flat().filter(a => a);
 
   res.status(200).json(feeds);
 });
