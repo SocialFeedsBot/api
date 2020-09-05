@@ -2,7 +2,10 @@
 const Eris = require('eris');
 const { MongoClient } = require('mongodb');
 const GatewayClient = require('./gateway/GatewayClient');
+const Twitter = require('twitter');
 const express = require('express');
+const superagent = require('superagent');
+const btoa = require('btoa');
 const cors = require('cors');
 const config = require('../config');
 const bodyParser = require('body-parser');
@@ -15,7 +18,13 @@ app.use(cors());
 
 // Routing
 const feedsRoute = require('./routes/feeds');
+const oauthRoute = require('./routes/oauth');
+const usersRoute = require('./routes/users');
+const guildsRoute = require('./routes/guilds');
+app.use('/guilds', guildsRoute);
+app.use('/users', usersRoute);
 app.use('/feeds', feedsRoute);
+app.use('/oauth', oauthRoute);
 
 app.get('/status', async (req, res) => {
   if (req.app.locals.gw.connected) {
@@ -33,12 +42,20 @@ app.get('/status', async (req, res) => {
 async function start(gw) {
   const mongoClient = await MongoClient.connect(config.databaseURL, { useNewUrlParser: true, useUnifiedTopology: true });
   const db = mongoClient.db();
-  const client = new Eris(config.token, { restMode: true });
+  const client = new Eris(`Bot ${config.token}`, { restMode: true });
 
   app.locals.db = db;
   app.locals.gw = gw;
   app.locals.client = client;
   app.locals.storedUsers = new Map();
+
+  const { body } = await superagent.post('https://api.twitter.com/oauth2/token?grant_type=client_credentials')
+    .set('Authorization', `Basic ${btoa(`${config.twitterConsumerKey}:${config.twitterConsumerSecret}`)}`);
+  app.locals.twitterClient = new Twitter({
+    consumer_key: config.twitterConsumerKey,
+    consumer_secret: config.twitterConsumerSecret,
+    bearer_token: body.access_token
+  });
 
   gw.on('request', async (id, data) => {
     try {

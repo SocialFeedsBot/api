@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const superagent = require('superagent');
 const config = require('../../config');
 
+const isAuthed = require('../utils/auth');
+
 router.get('/', async (req, res) => {
   try {
     const { bot } = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
@@ -13,27 +15,29 @@ router.get('/', async (req, res) => {
   }
 
   let feeds = await req.app.locals.db.collection('feeds').find().toArray();
-  feeds = (feeds.map(feed => feed.feeds.map(f => ({
-    type: f.type,
-    url: f.url,
-    guildID: feed.guildID,
-    webhook: { id: feed._id, token: feed.token }
-  }))) || []).flat();
+  feeds = (await Promise.all(feeds.map(feed => feed.feeds.map(async f => {
+    let info;
+    try {
+      info = await req.app.locals.client.getWebhook(feed._id, feed.token);
+    } catch(e) {
+      return null;
+    }
+
+    return {
+      type: f.type,
+      url: f.url,
+      channelID: info.channel_id,
+      guildID: feed.guildID,
+      webhook: { id: feed._id, token: feed.token }
+    };
+  })))).filter(a => a);
 
   res.status(200).json(feeds);
 });
 
 router.get('/:guildID', async (req, res) => {
-  let userID;
-  let isBot;
-  try {
-    let data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
-    userID = data.id;
-    isBot = !!data.bot;
-  } catch(e) {
-    res.status(401).json({ success: false, error: 'Not authenticated' });
-    return;
-  }
+  const { auth, isBot, userID } = isAuthed(req, res);
+  if (!auth) return;
 
   let guild;
   if (!isBot) {
@@ -43,67 +47,81 @@ router.get('/:guildID', async (req, res) => {
       return;
     }
 
-    guild = member.guilds.filter(({ id }) => id === req.params.guildID);
-    if (!guild || !(guild.permissions & 0x20)) {
-      res.status(403).json({ error: 'You cannot manage this server' });
+    guild = member.filter(({ id }) => id === req.params.guildID);
+    if (!guild) {
+      res.status(404).json({ error: 'Unknown guild' });
+      return;
+    }
+
+    if (!guild.permissions & 1 << 3 && !guild.permissions & 1 << 5) {
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
   }
 
   let feeds = await req.app.locals.db.collection('feeds').find({ guildID: req.params.guildID }).toArray();
-  feeds = feeds.map(feed => feed.feeds.map(f => ({
-    type: f.type,
-    url: f.url,
-    webhook: { id: feed._id, token: feed.token }
-  }))).flat();
+  feeds = (await Promise.all(feeds.map(async feed => await Promise.all(feed.feeds.map(async f => {
+    let info;
+    try {
+      info = await req.app.locals.client.getWebhook(feed._id, feed.token);
+    } catch(e) {
+      return null;
+    }
+
+    return {
+      type: f.type,
+      url: f.url,
+      channelID: info.channel_id,
+      webhook: { id: feed._id, token: feed.token }
+    };
+  }))))).flat().filter(f => f);
 
   res.status(200).json(feeds);
 });
 
 router.post('/new', async (req, res) => {
-  let userID;
-  let isBot;
-  try {
-    let data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
-    userID = data.id;
-    isBot = !!data.bot;
-  } catch(e) {
-    res.status(401).json({ success: false, error: 'Not authenticated' });
-    return;
-  }
+  const { auth, isBot, userID } = isAuthed(req, res);
+  if (!auth) return;
 
   // Validate whether or not the URL is correct.
-  if (req.body.feed.type === 'youtube') {
+  if (req.body.type === 'youtube') {
     try {
-      await superagent.get(`https://youtube.com/channel/${req.body.feed.url}`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+      await superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${req.body.url}&key=${config.youtubeKey}`)
+        .set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
     } catch(err) {
-      res.status(400).json({ success: false, error: 'Invalid YouTube Channel' });
+      res.status(400).json({ success: false, error: err.response.body.error.message });
       return;
     }
-  } else if (req.body.feed.type === 'twitter') {
+  } else if (req.body.type === 'twitter') {
     try {
-      await superagent.get(`https://api.twitter.com/1.1/statuses/user_timeline?screen_name=${req.body.feed.url}`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+      await new Promise((resolve, reject) => {
+        req.app.locals.twitterClient.get('statuses/user_timeline', { screen_name: req.body.url, exclude_replies: true }, (error, tweets) => {
+          if (error) reject(error);
+          resolve(tweets);
+        });
+      });
     } catch(err) {
+      console.log(err);
       res.status(400).json({ success: false, error: 'Invalid Twitter Account' });
       return;
     }
-  } else if (req.body.feed.type === 'twitch') {
+  } else if (req.body.type === 'twitch') {
     try {
-      await superagent.get(`https://twitch.tv/${req.body.feed.url}`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+      await superagent.get(`https://twitch.tv/${req.body.url}`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid Twitch Channel' });
       return;
     }
-  } else if (req.body.feed.type === 'rss') {
+  } else if (req.body.type === 'rss') {
     try {
-      await superagent.get(req.body.feed.url).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+      await superagent.get(req.body.url).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid RSS URL' });
       return;
     }
-  } else if (req.body.feed.type === 'reddit') {
+  } else if (req.body.type === 'reddit') {
     try {
-      const a = await superagent.get(`https://reddit.com/r/${req.body.feed.url}/about.json`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+      const a = await superagent.get(`https://reddit.com/r/${req.body.url}/about.json`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
       if (a.body.data.over18 && !req.body.nsfw) {
         res.status(400).json({ success: false, error: 'Subreddit is over 18 and the specified channel is not an NSFW channel' });
       }
@@ -122,27 +140,41 @@ router.post('/new', async (req, res) => {
     }
 
     guild = member.guilds.filter(({ id }) => id === req.body.guildID);
-    if (!guild || !(guild.permissions & 0x20)) {
-      res.status(403).json({ success: false, error: 'You cannot manage this server' });
+    if (!guild) {
+      res.status(404).json({ error: 'Unknown guild' });
+      return;
+    }
+
+    if (!guild.permissions & 1 << 3 && !guild.permissions & 1 << 5) {
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
   }
 
-  let document = await req.app.locals.db.collection('feeds').findOne({ _id: req.body.webhook.id });
+  let webhook;
+  try {
+    webhook = await createWebhook(req.app.locals.client, req.body.channelID);
+  } catch(e) {
+    console.log(e);
+    res.status(403).json({ success: false, error: 'I do not have permissions to create webhooks.' });
+    return;
+  }
+
+  let document = await req.app.locals.db.collection('feeds').findOne({ _id: webhook.id });
   if (document) {
     delete document._id;
   }
 
   if (document) {
-    document.feeds.push(req.body.feed);
-    await req.app.locals.db.collection('feeds').updateOne({ _id: req.body.webhook.id }, { $set: document });
+    document.feeds.push({ type: req.body.type, url: req.body.url });
+    await req.app.locals.db.collection('feeds').updateOne({ _id: webhook.id }, { $set: document });
 
     res.status(200).json({ success: true });
   } else {
     await req.app.locals.db.collection('feeds').insertOne({
-      _id: req.body.webhook.id,
-      token: req.body.webhook.token,
-      feeds: [req.body.feed],
+      _id: webhook.id,
+      token: webhook.token,
+      feeds: [{ type: req.body.type, url: req.body.url }],
       guildID: req.body.guildID
     });
 
@@ -151,16 +183,8 @@ router.post('/new', async (req, res) => {
 });
 
 router.delete('/delete', async (req, res) => {
-  let userID;
-  let isBot;
-  try {
-    let data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
-    userID = data.id;
-    isBot = !!data.bot;
-  } catch(e) {
-    res.status(401).json({ success: false, error: 'Not authenticated' });
-    return;
-  }
+  const { auth, isBot, userID } = isAuthed(req, res);
+  if (!auth) return;
 
   let guild;
   if (!isBot) {
@@ -170,9 +194,14 @@ router.delete('/delete', async (req, res) => {
       return;
     }
 
-    guild = member.guilds.filter(({ id }) => id === req.body.guildID);
-    if (!guild || !(guild.permissions & 0x20)) {
-      res.status(403).json({ success: false, error: 'You cannot manage this server' });
+    guild = member.filter(({ id }) => id === req.body.guildID);
+    if (!guild) {
+      res.status(404).json({ error: 'Unknown guild' });
+      return;
+    }
+
+    if (!guild.permissions & 1 << 3 && !guild.permissions & 1 << 5) {
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
   }
@@ -195,3 +224,23 @@ router.delete('/delete', async (req, res) => {
   await req.app.locals.db.collection('feeds').updateOne({ _id: req.body.webhook.id }, { $set: document });
   res.status(200).json({ success: true });
 });
+
+async function createWebhook(client, channelID) {
+  const webhooks = await client.getChannelWebhooks(channelID);
+  if (webhooks.length) {
+    const webhook = webhooks.find(hook => hook.user.id === config.clientID);
+    if (webhook) {
+      return webhook;
+    }
+  }
+
+  const user = await client.getRESTUser(config.clientID);
+  const { body } = await superagent.get(user.dynamicAvatarURL('png'))
+    .catch(err => console.error(err));
+  const avatar = `data:image/png;base64,${body.toString('base64')}`;
+
+  return client.createChannelWebhook(channelID, {
+    name: 'DiscordFeeds',
+    avatar: avatar
+  }, 'Create Feed Webhook');
+}

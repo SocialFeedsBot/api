@@ -81,6 +81,11 @@ class Worker extends EventEmitter {
         break;
       }
 
+      case OPCodes.REQUEST_SHARED_GUILDS: {
+        this.emit(`request_shared_${packet.id}`, packet.d);
+        break;
+      }
+
       case OPCodes.HEARTBEAT_ACK: {
         this.latency = Date.now() - this.lastSentHeartbeat;
         this.emit('latency', this.latency);
@@ -107,6 +112,14 @@ class Worker extends EventEmitter {
   resolve(id, data) {
     if (!this.connected) return;
     this.send(OPCodes.RESOLVE, { result: data }, { id });
+  }
+
+  requestSharedGuilds(guilds) {
+    const id = (process.hrtime().reduce((a, b) => a + b) + Date.now()).toString(36);
+    return new Promise((resolve) => {
+      this.send(OPCodes.REQUEST_SHARED_GUILDS, { guilds }, { id });
+      this.once(`request_shared_${id}`, resolve);
+    });
   }
 
   heartbeat() {

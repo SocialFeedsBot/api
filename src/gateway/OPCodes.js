@@ -5,5 +5,6 @@ module.exports = {
   HEARTBEAT_ACK: 3,
   SHUTDOWN: 4,
   REQUEST: 5,
-  RESOLVE: 6
+  RESOLVE: 6,
+  REQUEST_SHARED_GUILDS: 7
 };
