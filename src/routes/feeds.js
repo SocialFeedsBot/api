@@ -14,7 +14,8 @@ router.get('/', async (req, res) => {
     return;
   }
 
-  let feeds = await req.app.locals.db.collection('feeds').find().toArray();
+  console.log(req.query)
+  let feeds = await req.app.locals.db.collection('feeds').find(req.query || undefined).toArray();
   feeds = feeds.map(feed => feed.feeds.map(f => {
     return {
       type: f.type,
