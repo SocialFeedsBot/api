@@ -67,6 +67,9 @@ async function start(gw) {
     return undefined;
   });
 
+  await db.collection('feeds').createIndex({ type: 0 });
+  await db.collection('feeds').createIndex({ url: 0 });
+
   app.listen(config.port);
 }
 
