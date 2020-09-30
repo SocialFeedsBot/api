@@ -6,13 +6,8 @@ const config = require('../../config');
 const isAuthed = require('../utils/auth');
 
 router.get('/', async (req, res) => {
-  try {
-    const { bot } = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
-    if (!bot) throw new Error('');
-  } catch(e) {
-    res.status(401).json({ success: false, error: 'Not authenticated' });
-    return;
-  }
+  const { auth, isBot, userID } = isAuthed(req, res);
+  if (!auth || !isBot) return;
 
   let feeds = await req.app.locals.db.collection('feeds').find({ feeds: { $elemMatch: req.query} }).toArray();
   feeds = feeds.map(feed => feed.feeds.map(f => {
