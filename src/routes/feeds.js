@@ -59,7 +59,7 @@ router.get('/:guildID', async (req, res) => {
       channelID: info.channel_id,
       webhook: { id: feed.webhook_id, token: feed.webhook_token }
     };
-  })));
+  }))).filter(a => a);
 
   res.status(200).json(feeds);
 });
