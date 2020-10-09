@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
   const { auth, isBot } = isAuthed(req, res);
   if (!auth || !isBot) return;
 
-  let feeds = await req.app.locals.db.collection('feeds').find({ $elemMatch: req.query }).toArray();
+  let feeds = await req.app.locals.db.collection('feeds').find(req.query).toArray();
   feeds = feeds.map(feed => ({
     type: feed.type,
     url: feed.url,
