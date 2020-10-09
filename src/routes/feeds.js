@@ -6,18 +6,16 @@ const config = require('../../config');
 const isAuthed = require('../utils/auth');
 
 router.get('/', async (req, res) => {
-  const { auth, isBot, userID } = isAuthed(req, res);
+  const { auth, isBot } = isAuthed(req, res);
   if (!auth || !isBot) return;
 
-  let feeds = await req.app.locals.db.collection('feeds').find({ feeds: { $elemMatch: req.query } }).toArray();
-  feeds = feeds.map(feed => feed.feeds.map(f => {
-    return {
-      type: f.type,
-      url: f.url,
-      guildID: feed.guildID,
-      webhook: { id: feed._id, token: feed.token }
-    };
-  })).flat().filter(a => a);
+  let feeds = await req.app.locals.db.collection('feeds').find({ $elemMatch: req.query }).toArray();
+  feeds = feeds.map(feed => ({
+    type: feed.type,
+    url: feed.url,
+    guildID: feed.guildID,
+    webhook: { id: feed.webhook_id, token: feed.webhook_token }
+  }));
 
   res.status(200).json(feeds);
 });
@@ -47,21 +45,21 @@ router.get('/:guildID', async (req, res) => {
   }
 
   let feeds = await req.app.locals.db.collection('feeds').find({ guildID: req.params.guildID }).toArray();
-  feeds = (await Promise.all(feeds.map(async feed => await Promise.all(feed.feeds.map(async f => {
+  feeds = (await Promise.all(feeds.map(async feed => {
     let info;
     try {
-      info = await req.app.locals.client.getWebhook(feed._id, feed.token);
-    } catch(e) {
+      info = await req.app.locals.client.getWebhook(feed.webhook_id, feed.webhook_token);
+    } catch (e) {
       return null;
     }
 
     return {
-      type: f.type,
-      url: f.url,
+      type: feed.type,
+      url: feed.url,
       channelID: info.channel_id,
-      webhook: { id: feed._id, token: feed.token }
+      webhook: { id: feed.webhook_id, token: feed.webhook_token }
     };
-  }))))).flat().filter(f => f);
+  })));
 
   res.status(200).json(feeds);
 });
@@ -146,26 +144,15 @@ router.post('/new', async (req, res) => {
     return;
   }
 
-  let document = await req.app.locals.db.collection('feeds').findOne({ _id: webhook.id });
-  if (document) {
-    delete document._id;
-  }
+  await req.app.locals.db.collection('feeds').insertOne({
+    webhook_id: webhook.id,
+    webhook_token: webhook.token,
+    type: req.body.type,
+    url: req.body.url,
+    guildID: req.body.guildID
+  });
 
-  if (document) {
-    document.feeds.push({ type: req.body.type, url: req.body.url });
-    await req.app.locals.db.collection('feeds').updateOne({ _id: webhook.id }, { $set: document });
-
-    res.status(200).json({ success: true });
-  } else {
-    await req.app.locals.db.collection('feeds').insertOne({
-      _id: webhook.id,
-      token: webhook.token,
-      feeds: [{ type: req.body.type, url: req.body.url }],
-      guildID: req.body.guildID
-    });
-
-    res.status(200).json({ success: true });
-  }
+  res.status(200).json({ success: true });
 });
 
 router.delete('/delete', async (req, res) => {
@@ -192,22 +179,17 @@ router.delete('/delete', async (req, res) => {
     }
   }
 
-  let document = await req.app.locals.db.collection('feeds').findOne({ _id: req.body.webhook.id });
+  let document = await req.app.locals.db.collection('feeds').findOne({
+    type: req.body.type,
+    url: req.body.url,
+    webhook_id: req.body.webhookID
+  });
   if (!document) {
-    res.status(404).json({ success: false, error: 'Webhook is non existant' });
+    res.status(404).json({ success: false, error: 'Feed is non existent' });
     return;
   }
 
-  delete document._id;
-  const index = document.feeds.findIndex(feed => feed.url === req.body.feed.url && feed.type === req.body.feed.type);
-  if (index > -1) {
-    document.feeds.splice(index, 1);
-  } else {
-    res.status(404).json({ success: false, error: 'Feed is non existant' });
-    return;
-  }
-
-  await req.app.locals.db.collection('feeds').updateOne({ _id: req.body.webhook.id }, { $set: document });
+  await req.app.locals.db.collection('feeds').deleteOne({ _id: document._id });
   res.status(200).json({ success: true });
 });
 

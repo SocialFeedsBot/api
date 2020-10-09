@@ -23,7 +23,7 @@ router.post('/callback/:code', async (req, res) => {
     return;
   }
 
-  const { body: user } = await superagent.get('https://discordapp.com/api/v7/users/@me')
+  const { body: user } = await superagent.get('https://discord.com/api/v7/users/@me')
     .set('Authorization', `Bearer ${body.access_token}`);
 
   jwt.sign(Object.assign(body, { userID: user.id }), config.jwtSecret, { expiresIn: body.expires_in }, (err, token) => {

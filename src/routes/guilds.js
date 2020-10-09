@@ -48,7 +48,7 @@ router.get('/:id', async (req, res) => {
     if (req.app.locals.storedUsers.get(data.userID)) {
       guild = req.app.locals.storedUsers.get(data.userID).filter(g => g.id === req.params.id)[0];
     } else {
-      const { body: guilds } = await superagent.get('https://discordapp.com/api/v7/users/@me/guilds')
+      const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
         .set('Authorization', `Bearer ${data.access_token}`);
 
       let shared = await req.app.locals.gw.requestSharedGuilds(guilds.map(g => g.id));
@@ -90,7 +90,7 @@ router.get('/:id/channels', async (req, res) => {
     if (req.app.locals.storedUsers.get(data.userID)) {
       guild = req.app.locals.storedUsers.get(data.userID).filter(g => g.id === req.params.id)[0];
     } else {
-      const { body: guilds } = await superagent.get('https://discordapp.com/api/v7/users/@me/guilds')
+      const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
         .set('Authorization', `Bearer ${data.access_token}`);
 
       let shared = await req.app.locals.gw.requestSharedGuilds(guilds.map(g => g.id));
