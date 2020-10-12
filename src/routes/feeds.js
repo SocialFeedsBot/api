@@ -72,7 +72,7 @@ router.post('/new', async (req, res) => {
   if (req.body.type === 'youtube') {
     try {
       await superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${req.body.url}&key=${config.youtubeKey}`)
-        .set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+        .set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: err.response.body.error.message });
       return;
@@ -91,14 +91,14 @@ router.post('/new', async (req, res) => {
     }
   } else if (req.body.type === 'twitch') {
     try {
-      await superagent.get(`https://twitch.tv/${req.body.url}`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+      await superagent.get(`https://twitch.tv/${req.body.url}`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid Twitch Channel' });
       return;
     }
   } else if (req.body.type === 'rss') {
     try {
-      await superagent.get(req.body.url).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+      await superagent.get(req.body.url).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
     } catch(err) {
       res.status(400).json({ success: false, error: 'Invalid RSS URL' });
       return;
