@@ -14,7 +14,8 @@ router.get('/', async (req, res) => {
     type: feed.type,
     url: feed.url,
     guildID: feed.guildID,
-    webhook: { id: feed.webhook_id, token: feed.webhook_token }
+    webhook: { id: feed.webhook_id, token: feed.webhook_token },
+    options: feed.options || {}
   }));
 
   res.status(200).json(feeds);
@@ -57,7 +58,8 @@ router.get('/:guildID', async (req, res) => {
       type: feed.type,
       url: feed.url,
       channelID: info.channel_id,
-      webhook: { id: feed.webhook_id, token: feed.webhook_token }
+      webhook: { id: feed.webhook_id, token: feed.webhook_token },
+      options: feed.options || {}
     };
   }))).filter(a => a);
 
@@ -149,7 +151,8 @@ router.post('/new', async (req, res) => {
     webhook_token: webhook.token,
     type: req.body.type,
     url: req.body.url,
-    guildID: req.body.guildID
+    guildID: req.body.guildID,
+    options: req.body.options || {}
   });
 
   res.status(200).json({ success: true });
