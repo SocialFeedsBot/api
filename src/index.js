@@ -2,6 +2,7 @@
 const Eris = require('eris');
 const { MongoClient } = require('mongodb');
 const GatewayClient = require('./gateway/GatewayClient');
+const Logger = require('./logger/');
 const Twitter = require('twitter');
 const express = require('express');
 const superagent = require('superagent');
@@ -10,32 +11,21 @@ const cors = require('cors');
 const config = require('../config');
 const bodyParser = require('body-parser');
 
-// App
+// Init
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
+const logger = new Logger('API', [config.token, config.jwtSecret, config.twitterConsumerKey,
+  config.twitterConsumerSecret, config.youtubeKey, config.clientSecret, config.gateway.secret]);
 
-// Routing
-const feedsRoute = require('./routes/feeds');
-const oauthRoute = require('./routes/oauth');
-const usersRoute = require('./routes/users');
-const guildsRoute = require('./routes/guilds');
-app.use('/guilds', guildsRoute);
-app.use('/users', usersRoute);
-app.use('/feeds', feedsRoute);
-app.use('/oauth', oauthRoute);
+// Versions
+const v1 = require('./v1/');
+app.use('/v1', v1);
 
-app.get('/status', async (req, res) => {
-  if (req.app.locals.gw.connected) {
-    const shards = await req.app.locals.gw.request({ t: 'cluster', id: 'all' }, 'this.shards.map(s => ({ uptime: this.uptime, id: s.id, cluster: this.clusterID, status: s.status, guilds: this.guilds.filter(g => g.shard.id === s.id).length }));');
-    const feeds = await req.app.locals.gw.request({ t: 'feeds' }, '({ uptime: Date.now() - this.startedAt })');
-    const api = await req.app.locals.gw.request({ t: 'api' }, '({ uptime: process.uptime() * 1000 })');
-
-    res.status(200).json({ shards: shards.flat(), feeds: feeds[0], api: api[0] });
-  } else {
-    res.status(200).json({ shards: [], feeds: { uptime: 0 }, api: { uptime: 0 } });
-  }
+app.use((req, res, next) => {
+  logger.debug(`${req.method.toUpperCase()} ${req.url}`);
+  next();
 });
 
 // Start
@@ -76,8 +66,8 @@ async function start(gw) {
 const worker = new GatewayClient(config.gateway);
 
 worker
-  .on('error', (err) => console.log('Gateway error:', err))
-  .on('connect', (ms) => console.log(`Gateway connected in ${ms}ms`))
+  .on('error', (err) => logger.extension('Gateway').error(err))
+  .on('connect', (ms) => logger.extension('Gateway').info(`Gateway connected in ${ms}ms`))
   .once('ready', () => start(worker));
 
 worker.connect();

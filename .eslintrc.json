@@ -12,19 +12,7 @@
 		"no-extra-parens": ["warn", "all", {
 			"nestedBinaryExpressions": false
 		}],
-		"valid-jsdoc": ["warn", {
-			"requireReturn": false,
-			"requireReturnDescription": false,
-			"preferType": {
-				"String": "string",
-				"Number": "number",
-				"Boolean": "boolean",
-				"Function": "function",
-				"object": "Object",
-				"date": "Date",
-				"error": "Error"
-			}
-		}],
+		"valid-jsdoc": 0,
 
 		"accessor-pairs": "warn",
 		"array-callback-return": "error",
