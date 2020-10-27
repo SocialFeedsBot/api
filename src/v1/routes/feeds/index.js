@@ -18,14 +18,22 @@ module.exports = class Feeds extends Base {
 
   /**
    * GET all of the feeds in the database
-   * TODO: Paginate as these are going to be huge soon.
    * @param req {any} Request
    * @param res {any} Response
    */
   async getAll(req, res) {
     if (!req.authInfo.isBot) return;
+    const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
 
-    let feeds = await req.app.locals.db.collection('feeds').find(req.query).toArray();
+    // Calculate pages
+    const feedCount = (await req.app.locals.db.collection('feeds').find(Object.assign(req.query, { page: undefined })).toArray()).length;
+    const pages = Math.floor(feedCount / 100) + 1;
+
+    // Get data for that page
+    let feeds = await req.app.locals.db.collection('feeds').find(Object.assign(req.query, { page: undefined }))
+      .skip(page > 0 ? page * 100 : 0)
+      .limit(100)
+      .toArray();
     feeds = feeds.map(feed => ({
       type: feed.type,
       url: feed.url,
@@ -34,7 +42,12 @@ module.exports = class Feeds extends Base {
       options: feed.options || {}
     }));
 
-    res.status(200).json(feeds);
+    res.status(200).json({
+      feeds,
+      page: page + 1,
+      pages,
+      feedCount
+    });
   }
 
   /**
@@ -51,30 +64,40 @@ module.exports = class Feeds extends Base {
         return;
       }
 
-      guild = member.filter(({ id }) => id === req.params.guildID);
+      guild = member.filter(({ id }) => id === req.params.guildID)[0];
       const hasPerms = this.checkPermissions(req, res, guild);
       if (!hasPerms) return;
     }
 
-    let feeds = await req.app.locals.db.collection('feeds').find({ guildID: req.params.guildID }).toArray();
-    feeds = (await Promise.all(feeds.map(async feed => {
-      let info;
-      try {
-        info = await req.app.locals.client.getWebhook(feed.webhook_id, feed.webhook_token);
-      } catch (e) {
-        return null;
-      }
+    const feedCount = (await req.app.locals.db.collection('feeds').find({ guildID: req.params.guildID }).toArray()).length;
+    const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
+    const pages = Math.floor(feedCount / 50) + 1;
 
+    let feeds = await req.app.locals.db.collection('feeds')
+      .find(Object.assign(req.query, { page: undefined }))
+      .skip(page > 0 ? page * 50 : 0)
+      .limit(50)
+      .toArray();
+
+    if (!feeds[0]) {
+      res.status(200).json({ feeds: [], feedCount, page: page + 1, pages });
+      return;
+    }
+
+    const webhooks = await req.app.locals.client.getGuildWebhooks(feeds[0].guildID);
+    feeds = feeds.map(feed => {
+      let webhook = webhooks.find(w => w.id === feed.webhook_id);
+      if (!webhook) return null;
       return {
         type: feed.type,
         url: feed.url,
-        channelID: info.channel_id,
+        channelID: webhook.channel_id,
         webhook: { id: feed.webhook_id, token: feed.webhook_token },
         options: feed.options || {}
       };
-    }))).filter(a => a);
+    }).filter(a => a);
 
-    res.status(200).json(feeds);
+    res.status(200).json({ feeds, feedCount, page: page + 1, pages });
   }
 
   /**
@@ -94,7 +117,7 @@ module.exports = class Feeds extends Base {
         return;
       }
 
-      guild = member.guilds.filter(({ id }) => id === req.body.guildID);
+      guild = member.guilds.filter(({ id }) => id === req.body.guildID)[0];
       const hasPerms = this.checkPermissions(req, res, guild);
       if (!hasPerms) return;
     }
@@ -183,6 +206,7 @@ module.exports = class Feeds extends Base {
           });
         });
       } catch(err) {
+        console.log(err);
         res.status(400).json({ success: false, error: 'Invalid Twitter Account' });
         return false;
       }
@@ -260,7 +284,10 @@ module.exports = class Feeds extends Base {
       auth = false;
     }
 
-    if (!auth) return;
+    if (!auth) {
+      res.status(401).json({ success: false, error: 'Unauthorised' });
+      return;
+    }
     req.authInfo = { isBot, userID };
     next();
   }

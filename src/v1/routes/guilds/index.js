@@ -38,7 +38,7 @@ module.exports = class Guilds extends Base {
           .set('Authorization', `Bearer ${data.access_token}`);
 
         let shared = await this.refreshUser(req.app, data.userID, guilds);
-        res.status(200).json(guilds.filter(g => shared.indexOf(g.id) !== -1));
+        res.status(200).json(guilds.filter(g => shared.includes(g.id)));
       }
     });
   }
@@ -101,7 +101,7 @@ module.exports = class Guilds extends Base {
         const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
           .set('Authorization', `Bearer ${data.access_token}`);
 
-        let shared = await this.refreshUser(req.app, data.userID, guilds.map(g => g.id));
+        let shared = await this.refreshUser(req.app, data.userID, guilds);
         guild = guilds.filter(g => shared.indexOf(g.id) !== -1).filter(g => g.id === req.params.id)[0];
       }
 
@@ -125,7 +125,7 @@ module.exports = class Guilds extends Base {
     let shared = await app.locals.gw.requestSharedGuilds(guilds.map(g => g.id));
     shared = shared.result.flat();
 
-    app.locals.storedUsers.set(userID, guilds.filter(g => shared.indexOf(g.id) !== -1));
+    app.locals.storedUsers.set(userID, guilds.filter(g => shared.includes(g.id)));
     setTimeout(() => app.locals.storedUsers.delete(userID), 120 * 1000);
 
     return shared;
@@ -145,8 +145,8 @@ module.exports = class Guilds extends Base {
       const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
         .set('Authorization', `Bearer ${data.access_token}`);
 
-      let shared = await this.refreshUser(app, data.userID, guilds.map(g => g.id));
-      guild = guilds.filter(g => shared.indexOf(g.id) !== -1).filter(g => g.id === id)[0];
+      let shared = await this.refreshUser(app, data.userID, guilds);
+      guild = guilds.filter(g => shared.includes(g.id)).filter(g => g.id === id)[0];
     }
 
     if (!guild) {
