@@ -74,7 +74,7 @@ module.exports = class Feeds extends Base {
     const pages = Math.floor(feedCount / 50) + 1;
 
     let feeds = await req.app.locals.db.collection('feeds')
-      .find(Object.assign(req.query, { page: undefined }))
+      .find(Object.assign(req.query, { guildID: req.params.guildID, page: undefined }))
       .skip(page > 0 ? page * 50 : 0)
       .limit(50)
       .toArray();
