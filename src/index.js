@@ -47,6 +47,15 @@ async function start(gw) {
     bearer_token: body.access_token
   });
 
+  const { body: twitch } = await superagent.post('https://id.twitch.tv/oauth2/token')
+    .query({
+      client_id: config.twitchClient,
+      client_secret: config.twitchSecret,
+      grant_type: 'client_credentials',
+      scope: 'user:read:email'
+    });
+  app.locals.twitchToken = twitch.access_token;
+
   gw.on('request', async (id, data) => {
     try {
       let res = await eval(data.input);

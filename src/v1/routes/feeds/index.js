@@ -126,7 +126,6 @@ module.exports = class Feeds extends Base {
     try {
       webhook = await this.createWebhook(req.app.locals.client, req.body.channelID);
     } catch(e) {
-      console.log(e);
       res.status(403).json({ success: false, error: 'I do not have permissions to create webhooks.' });
       return;
     }
@@ -211,11 +210,15 @@ module.exports = class Feeds extends Base {
         return false;
       }
     } else if (req.body.type === 'twitch') {
-      try {
-        await superagent.get(`https://twitch.tv/${req.body.url}`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
-      } catch(err) {
+      const { body: { data } } = await superagent.get('https://api.twitch.tv/helix/users')
+        .set('Authorization', `Bearer ${req.app.locals.twitchToken}`)
+        .set('Client-ID', config.twitchClient)
+        .query({ login: req.body.url });
+
+      if (!data.length) {
         res.status(400).json({ success: false, error: 'Invalid Twitch Channel' });
-        return false;
+      } else {
+        req.body.options = Object.assign(req.body.options || {}, { user_id: data[0].id });
       }
     } else if (req.body.type === 'rss') {
       try {
