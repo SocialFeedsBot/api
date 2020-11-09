@@ -25,20 +25,12 @@ module.exports = class Feeds extends Base {
     if (!req.authInfo.isBot) return;
     const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
 
-    // Fix options
-    let options = {};
-    Object.keys(req.query).filter(key => key.startsWith('opts.'))
-      .forEach(key => {
-        req.query[key] = undefined;
-        options[key.replace('opts.', '')] = req.query[key];
-      });
-
     // Calculate pages
-    const feedCount = (await req.app.locals.db.collection('feeds').find(Object.assign(req.query, { page: undefined, options })).toArray()).length;
+    const feedCount = (await req.app.locals.db.collection('feeds').find(Object.assign(req.query, { page: undefined })).toArray()).length;
     const pages = Math.floor(feedCount / 100) + 1;
 
     // Get data for that page
-    let feeds = await req.app.locals.db.collection('feeds').find(Object.assign(req.query, { page: undefined, options }))
+    let feeds = await req.app.locals.db.collection('feeds').find(Object.assign(req.query, { page: undefined }))
       .skip(page > 0 ? page * 100 : 0)
       .limit(100)
       .toArray();
@@ -77,19 +69,12 @@ module.exports = class Feeds extends Base {
       if (!hasPerms) return;
     }
 
-    // Fix options
-    let options = {};
-    Object.keys(req.query).filter(key => key.startsWith('opts.'))
-      .forEach(key => {
-        options[key.replace('opts.', '')] = req.query[key];
-      });
-
     const feedCount = (await req.app.locals.db.collection('feeds').find({ guildID: req.params.guildID }).toArray()).length;
     const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
     const pages = Math.floor(feedCount / 50) + 1;
 
     let feeds = await req.app.locals.db.collection('feeds')
-      .find(Object.assign(req.query, { guildID: req.params.guildID, options, page: undefined }))
+      .find(Object.assign(req.query, { guildID: req.params.guildID, page: undefined }))
       .skip(page > 0 ? page * 50 : 0)
       .limit(50)
       .toArray();
