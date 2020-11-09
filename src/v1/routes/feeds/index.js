@@ -29,6 +29,7 @@ module.exports = class Feeds extends Base {
     let options = {};
     Object.keys(req.query).filter(key => key.startsWith('opts.'))
       .forEach(key => {
+        req.query[key] = undefined;
         options[key.replace('opts.', '')] = req.query[key];
       });
 
