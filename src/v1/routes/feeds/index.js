@@ -105,7 +105,12 @@ module.exports = class Feeds extends Base {
       return;
     }
 
-    const webhooks = await req.app.locals.client.getGuildWebhooks(feeds[0].guildID);
+    let webhooks;
+    try {
+      webhooks = await req.app.locals.client.getGuildWebhooks(feeds[0].guildID);
+    } catch (e) {
+      res.status(501).json({ error: 'Missing Manage Webhooks permission.' });
+    }
     feeds = feeds.map(feed => {
       let webhook = webhooks.find(w => w.id === feed.webhook_id);
       if (!webhook) return null;
