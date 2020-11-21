@@ -243,7 +243,8 @@ module.exports = class Feeds extends Base {
       }
     } else if (req.body.type === 'rss') {
       try {
-        await superagent.get(req.body.url).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
+        await superagent.get(req.body.url).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)')
+          .set('Accept', 'text/html,application/xhtml+xml,application/xml,text/xml');
       } catch(err) {
         res.status(400).json({ success: false, error: 'Invalid RSS URL' });
         return false;
