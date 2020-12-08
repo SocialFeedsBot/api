@@ -123,7 +123,7 @@ module.exports = class Guilds extends Base {
    */
   async refreshUser(app, userID, guilds) {
     let shared = await app.locals.gw.requestSharedGuilds(guilds.map(g => g.id));
-    shared = shared.result.flat();
+    shared = shared.data.result.flat();
 
     app.locals.storedUsers.set(userID, guilds.filter(g => shared.includes(g.id)));
     setTimeout(() => app.locals.storedUsers.delete(userID), 120 * 1000);

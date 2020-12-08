@@ -15,9 +15,9 @@ module.exports = class Status extends Base {
    */
   async get(req, res) {
     if (req.app.locals.gw.connected) {
-      const shards = await req.app.locals.gw.request({ t: 'cluster', id: 'all' }, 'this.shards.map(s => ({ uptime: this.uptime, id: s.id, cluster: this.clusterID, status: s.status, guilds: this.guilds.filter(g => g.shard.id === s.id).length }));');
-      const feeds = await req.app.locals.gw.request({ t: 'feeds' }, '({ uptime: Date.now() - this.startedAt })');
-      const api = await req.app.locals.gw.request({ t: 'api' }, '({ uptime: process.uptime() * 1000 })');
+      const shards = await req.app.locals.gw.request({ name: 'cluster', id: 'all' }, 'this.shards.map(s => ({ uptime: this.uptime, id: s.id, cluster: this.clusterID, status: s.status, guilds: this.guilds.filter(g => g.shard.id === s.id).length }));');
+      const feeds = await req.app.locals.gw.request({ name: 'feeds' }, '({ uptime: Date.now() - this.startedAt })');
+      const api = await req.app.locals.gw.request({ name: 'api' }, '({ uptime: process.uptime() * 1000 })');
 
       res.status(200).json({ shards: shards.flat(), feeds: feeds[0], api: api[0] });
     } else {

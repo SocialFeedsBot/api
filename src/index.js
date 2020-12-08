@@ -1,7 +1,7 @@
 // Constants
 const Eris = require('eris');
 const { MongoClient } = require('mongodb');
-const GatewayClient = require('./gateway/GatewayClient');
+const GatewayClient = require('gateway-client');
 const Logger = require('./logger/');
 const Twitter = require('twitter');
 const express = require('express');
@@ -70,13 +70,16 @@ async function start(gw) {
   await db.collection('feeds').createIndex({ url: 1 });
 
   app.listen(config.port);
+
+  gw.sendReady();
 }
 
-const worker = new GatewayClient(config.gateway);
+const worker = new GatewayClient(config.gateway.use, 'api', config.gateway.address, config.gateway.secret);
 
 worker
   .on('error', (err) => logger.extension('Gateway').error(err))
   .on('connect', (ms) => logger.extension('Gateway').info(`Gateway connected in ${ms}ms`))
+  .on('restart', () => process.exit(1))
   .once('ready', () => start(worker));
 
 worker.connect();
