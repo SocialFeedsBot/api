@@ -143,7 +143,7 @@ module.exports = class Feeds extends Base {
         return;
       }
 
-      guild = member.guilds.filter(({ id }) => id === req.body.guildID)[0];
+      guild = member.filter(({ id }) => id === req.body.guildID)[0];
       const hasPerms = this.checkPermissions(req, res, guild);
       if (!hasPerms) return;
     }
@@ -178,11 +178,12 @@ module.exports = class Feeds extends Base {
     if (!req.authInfo.isBot) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
-        res.status(403).json({ success: false, error: 'Not authenticated' });
-        return;
+        const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
+          .set('Authorization', `Bearer ${req.authInfo.accessToken}`);
+        member = guilds;
       }
 
-      guild = member.filter(({ id }) => id === req.body.guildID);
+      guild = member.filter(({ id }) => id === req.body.guildID)[0];
       if (!guild) {
         res.status(404).json({ error: 'Unknown guild' });
         return;
@@ -304,10 +305,12 @@ module.exports = class Feeds extends Base {
     let userID;
     let isBot;
     let auth;
+    let token;
     try {
       let data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
       userID = data.userID;
       isBot = !!data.bot;
+      token = data.access_token;
       auth = true;
     } catch(e) {
       res.status(401).json({ success: false, error: 'Not authenticated' });
@@ -318,7 +321,7 @@ module.exports = class Feeds extends Base {
       res.status(401).json({ success: false, error: 'Unauthorised' });
       return;
     }
-    req.authInfo = { isBot, userID };
+    req.authInfo = { isBot, userID, accessToken: token };
     next();
   }
 

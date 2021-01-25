@@ -110,7 +110,7 @@ module.exports = class Guilds extends Base {
         return;
       }
 
-      const channels = (await req.app.locals.gw.request({ t: 'cluster', id: 'all' }, `this.guilds.get('${req.params.id}') ? this.guilds.get('${req.params.id}').channels.toJSON() : null`)).filter(c => c)[0];
+      const channels = (await req.app.locals.gw.request({ name: 'cluster', id: 'all' }, `this.guilds.get('${req.params.id}') ? this.guilds.get('${req.params.id}').channels.toJSON() : null`)).filter(c => c)[0];
       res.status(200).json(channels);
     });
   }
