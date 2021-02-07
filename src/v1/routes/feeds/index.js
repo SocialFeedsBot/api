@@ -70,8 +70,7 @@ module.exports = class Feeds extends Base {
     if (!req.authInfo.isBot) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
-        res.status(403).json({ error: 'Not authenticated' });
-        return;
+        member = await this.refreshUser(req.authInfo.userID);
       }
 
       guild = member.filter(({ id }) => id === req.params.guildID)[0];
@@ -139,8 +138,7 @@ module.exports = class Feeds extends Base {
     if (!req.authInfo.isBot) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
-        res.status(403).json({ success: false, error: 'Not authenticated' });
-        return;
+        member = await this.refreshUser(req.authInfo.userID);
       }
 
       guild = member.filter(({ id }) => id === req.body.guildID)[0];
@@ -178,9 +176,7 @@ module.exports = class Feeds extends Base {
     if (!req.authInfo.isBot) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
-        const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
-          .set('Authorization', `Bearer ${req.authInfo.accessToken}`);
-        member = guilds;
+        member = await this.refreshUser(req.authInfo.userID);
       }
 
       guild = member.filter(({ id }) => id === req.body.guildID)[0];
@@ -343,6 +339,14 @@ module.exports = class Feeds extends Base {
     }
 
     return true;
+  }
+
+  async refreshUser(id, token) {
+    const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
+      .set('Authorization', `Bearer ${token}`);
+
+    this.router.app.locals.storedUsers.set(id, guilds);
+    return guilds;
   }
 
 };
