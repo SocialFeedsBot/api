@@ -261,6 +261,14 @@ module.exports = class Feeds extends Base {
         res.status(400).json({ success: false, error: 'Invalid Subreddit name' });
         return false;
       }
+    } else if (req.body.type === 'statuspage') {
+      try {
+        await superagent.get(`https://${new URL(req.body.url).hostname}/api/v2/`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+      } catch(err) {
+        console.log(err);
+        res.status(400).json({ success: false, error: 'Invalid status page url, ensure it is managed by statuspage.io' });
+        return false;
+      }
     }
 
     return true;
