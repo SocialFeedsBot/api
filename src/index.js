@@ -19,6 +19,8 @@ app.use(cors());
 const logger = new Logger('API', [config.token, config.jwtSecret, config.twitterConsumerKey,
   config.twitterConsumerSecret, config.youtubeKey, config.clientSecret, config.gateway.secret]);
 
+process.on('unhandledRejection', (err) => logger.error(`Unhandled rejection: ${err.stack}`));
+
 // Versions
 const v1 = require('./v1/');
 app.use('/v1', v1);
