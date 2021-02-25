@@ -49,7 +49,10 @@ module.exports = class Status extends Base {
     if (req.app.locals.gw.connected) {
       const services = await req.app.locals.gw.request(
         { name: 'gateway' },
-        'Object.values(this.connections).filter(c=>c.connected).map(a => ({ id: a.cluster ? a.cluster.id : a.id, type: a.type }))');
+        `Object.values(this.connections).filter(c=>c.connected).map(a => ({
+          id: a.cluster ? a.cluster.id : (a.interactions ? a.interactions.id : a.id),
+          type: a.type
+        }))`);
 
       res.status(200).json({ services: services[0] });
     } else {
