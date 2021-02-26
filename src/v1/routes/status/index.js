@@ -34,7 +34,7 @@ module.exports = class Status extends Base {
         memory: process.memoryUsage().heapUsed
       })`);
 
-      res.status(200).json({ shards: shards.flat(), feeds: feeds[0], api: api[0] });
+      res.status(200).json({ shards: shards.flat(), feeds: feeds, api: api[0] });
     } else {
       res.status(200).json({ shards: [], feeds: { uptime: 0 }, api: { uptime: 0 } });
     }
