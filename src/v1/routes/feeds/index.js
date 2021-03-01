@@ -22,7 +22,7 @@ module.exports = class Feeds extends Base {
    * @param res {any} Response
    */
   async getAll(req, res) {
-    if (!req.authInfo.isBot) return;
+    if (!req.authInfo.isBot && !config.admins.includes(req.authInfo.userID)) return;
     const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
 
     // Fix query
@@ -70,7 +70,7 @@ module.exports = class Feeds extends Base {
     if (!req.authInfo.isBot) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
-        member = await this.refreshUser(req.authInfo.userID);
+        member = await this.refreshUser(req, req.authInfo.userID, req.authInfo.accessToken);
       }
 
       guild = member.filter(({ id }) => id === req.params.guildID)[0];
@@ -138,7 +138,7 @@ module.exports = class Feeds extends Base {
     if (!req.authInfo.isBot) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
-        member = await this.refreshUser(req.authInfo.userID);
+        member = await this.refreshUser(req, req.authInfo.userID, req.authInfo.accessToken);
       }
 
       guild = member.filter(({ id }) => id === req.body.guildID)[0];
@@ -176,7 +176,7 @@ module.exports = class Feeds extends Base {
     if (!req.authInfo.isBot) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
-        member = await this.refreshUser(req.authInfo.userID);
+        member = await this.refreshUser(req, req.authInfo.userID, req.authInfo.accessToken);
       }
 
       guild = member.filter(({ id }) => id === req.body.guildID)[0];
@@ -349,11 +349,13 @@ module.exports = class Feeds extends Base {
     return true;
   }
 
-  async refreshUser(id, token) {
+  async refreshUser(req, id, token) {
+    console.log('refresh')
     const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
       .set('Authorization', `Bearer ${token}`);
+      console.log('refreshed')
 
-    this.router.app.locals.storedUsers.set(id, guilds);
+    req.app.locals.storedUsers.set(id, guilds);
     return guilds;
   }
 
