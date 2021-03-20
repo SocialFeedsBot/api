@@ -11,9 +11,35 @@ module.exports = class Feeds extends Base {
 
     this.use(this.auth);
     this.register('get', '/', this.getAll.bind(this));
+    this.register('get', '/counts', this.getCounts.bind(this));
     this.register('get', '/:guildID', this.getID.bind(this));
     this.register('post', '/', this.post.bind(this));
     this.register('delete', '/', this.delete.bind(this));
+  }
+
+  /**
+   * GET counts
+   * @param req {any} Request
+   * @param res {any} Response
+   */
+  async getCounts(req, res) {
+    if (!req.authInfo.isBot && !config.admins.includes(req.authInfo.userID)) return;
+    // Fix query
+    const query = {};
+    Object.keys(req.query).forEach(key => {
+      if (key.startsWith('opts.')) {
+        query[`options.${key.substring(5)}`] = req.query[key];
+      } else if (key !== 'page') {
+        query[key] = req.query[key];
+      }
+    });
+
+    // Calculate pages
+    const feedCount = (await req.app.locals.db.collection('feeds').find(query).toArray()).length;
+
+    res.status(200).json({
+      feedCount
+    });
   }
 
   /**
@@ -350,10 +376,8 @@ module.exports = class Feeds extends Base {
   }
 
   async refreshUser(req, id, token) {
-    console.log('refresh')
     const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
       .set('Authorization', `Bearer ${token}`);
-      console.log('refreshed')
 
     req.app.locals.storedUsers.set(id, guilds);
     return guilds;

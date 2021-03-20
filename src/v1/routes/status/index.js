@@ -20,6 +20,7 @@ module.exports = class Status extends Base {
         { name: 'cluster', id: 'all' },
         `this.shards.map(s => ({
           uptime: this.uptime,
+          memory: process.memoryUsage().heapUsed,
           id: s.id,
           cluster: this.clusterID,
           status: s.status,
@@ -29,12 +30,18 @@ module.exports = class Status extends Base {
         uptime: Date.now() - this.startedAt,
         memory: process.memoryUsage().heapUsed
       })`);
+      const interactions = await req.app.locals.gw.request({ name: 'interactions', id: 'all' }, `({
+        uptime: Date.now() - this.startedAt,
+        memory: process.memoryUsage().heapUsed,
+        id: this.id
+      })`);
+      console.log(interactions)
       const api = await req.app.locals.gw.request({ name: 'api' }, `({
-        uptime: process.uptime() * 1000,
+        uptime: Date.now() - app.startedAt,
         memory: process.memoryUsage().heapUsed
       })`);
 
-      res.status(200).json({ shards: shards.flat(), feeds: feeds, api: api[0] });
+      res.status(200).json({ shards: shards.flat(), interactions, feeds: feeds, api: api[0] });
     } else {
       res.status(200).json({ shards: [], feeds: { uptime: 0 }, api: { uptime: 0 } });
     }
