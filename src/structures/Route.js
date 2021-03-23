@@ -7,8 +7,12 @@ module.exports = class BaseRoute {
     this.router = express.Router();
   }
 
-  register(method, route, func) {
-    this.router[method](route, func);
+  register(method, route, func, middleware) {
+    if (middleware) {
+      this.router[method](route, middleware, func);
+    } else {
+      this.router[method](route, func);
+    }
   }
 
   use(func) {

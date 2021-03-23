@@ -9,12 +9,11 @@ module.exports = class Feeds extends Base {
   constructor() {
     super();
 
-    this.use(this.auth);
-    this.register('get', '/', this.getAll.bind(this));
+    this.register('get', '/', this.getAll.bind(this), this.auth.bind(this));
     this.register('get', '/counts', this.getCounts.bind(this));
-    this.register('get', '/:guildID', this.getID.bind(this));
-    this.register('post', '/', this.post.bind(this));
-    this.register('delete', '/', this.delete.bind(this));
+    this.register('get', '/:guildID', this.getID.bind(this), this.auth.bind(this));
+    this.register('post', '/', this.post.bind(this), this.auth.bind(this));
+    this.register('delete', '/', this.delete.bind(this), this.auth.bind(this));
   }
 
   /**
@@ -23,7 +22,6 @@ module.exports = class Feeds extends Base {
    * @param res {any} Response
    */
   async getCounts(req, res) {
-    if (!req.authInfo.isBot && !config.admins.includes(req.authInfo.userID)) return;
     // Fix query
     const query = {};
     Object.keys(req.query).forEach(key => {
