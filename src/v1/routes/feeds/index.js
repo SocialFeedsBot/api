@@ -237,7 +237,7 @@ module.exports = class Feeds extends Base {
   async verifyFeed(req, res) {
     if (req.body.type === 'youtube') {
       try {
-        const body = await superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername=${req.body.url}&key=${config.youtubeKey}`)
+        const { body } = await superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername=${req.body.url}&key=${config.youtubeKey}`)
           .set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
 
         if (body.items && body.items[0]) {
