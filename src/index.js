@@ -59,16 +59,6 @@ async function start(gw) {
     });
   app.locals.twitchToken = twitch.access_token;
 
-  gw.on('request', async (id, data) => {
-    try {
-      let res = await eval(data.input);
-      gw.resolve(id, res);
-    } catch(err) {
-      gw.resolve(id, err.stack);
-    }
-    return undefined;
-  });
-
   await db.collection('feeds').createIndex({ type: 1 });
   await db.collection('feeds').createIndex({ url: 1 });
 
@@ -82,7 +72,6 @@ const worker = new GatewayClient(config.gateway.use, 'api', config.gateway.addre
 worker
   .on('error', (err) => logger.extension('Gateway').error(err))
   .on('connect', (ms) => logger.extension('Gateway').info(`Gateway connected in ${ms}ms`))
-  .on('restart', () => process.exit(1))
   .once('ready', () => start(worker));
 
 worker.connect();

@@ -110,8 +110,8 @@ module.exports = class Guilds extends Base {
         return;
       }
 
-      const channels = (await req.app.locals.gw.request({ name: 'cluster', id: 'all' }, `this.guilds.get('${req.params.id}') ? this.guilds.get('${req.params.id}').channels.toJSON() : null`)).filter(c => c)[0];
-      res.status(200).json(channels);
+      const g = (await req.app.locals.gw.action('getGuild', { name: 'cluster' }, { guildID: req.params.id })).filter(c => c)[0];
+      res.status(200).json(g.channels);
     });
   }
 
@@ -123,7 +123,7 @@ module.exports = class Guilds extends Base {
    */
   async refreshUser(app, userID, guilds) {
     let shared = await app.locals.gw.requestSharedGuilds(guilds.map(g => g.id));
-    shared = shared.data.result.flat();
+    shared = shared.flat();
 
     app.locals.storedUsers.set(userID, guilds.filter(g => shared.includes(g.id)));
     setTimeout(() => app.locals.storedUsers.delete(userID), 120 * 1000);
