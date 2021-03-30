@@ -24,7 +24,6 @@ module.exports = class Status extends Base {
       const feeds = await req.app.locals.gw.action('stats', { name: 'feeds' });
       const interactions = await req.app.locals.gw.action('stats', { name: 'interactions' });
       const api = await req.app.locals.gw.action('stats', { name: 'api' });
-
       res.status(200).json({ clusters: clusters.flat(), interactions, feeds: feeds[0], api: api[0] });
     } else {
       res.status(200).json({ clusters: [], feeds: { uptime: 0 }, api: { uptime: 0 } });
