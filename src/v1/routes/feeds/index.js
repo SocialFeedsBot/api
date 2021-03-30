@@ -281,7 +281,7 @@ module.exports = class Feeds extends Base {
       }
     } else if (req.body.type === 'reddit') {
       try {
-        const a = await superagent.get(`https://reddit.com/r/${req.body.url}/about.json`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+        const a = await superagent.get(`https://reddit.com/r/${req.body.url}/about.json`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
         if (a.body.data.over18 && !req.body.nsfw) {
           res.status(400).json({ success: false, error: 'Subreddit is over 18 and the specified channel is not an NSFW channel' });
         }
@@ -291,9 +291,12 @@ module.exports = class Feeds extends Base {
       }
     } else if (req.body.type === 'statuspage') {
       try {
-        await superagent.get(`https://${new URL(req.body.url).hostname}/api/v2/`).set('User-Agent', 'DiscordFeeds-API/1 (NodeJS)');
+        const { body } = await superagent.get(`https://${new URL(req.body.url).hostname}/api/v2/scheduled-maintenances/upcoming.json`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
+        if (!body || !body.page || !body.scheduled_maintenances) {
+          res.status(400).json({ success: false, error: 'Invalid status page url, ensure it is managed by statuspage.io' });
+          return false;
+        }
       } catch(err) {
-        console.log(err);
         res.status(400).json({ success: false, error: 'Invalid status page url, ensure it is managed by statuspage.io' });
         return false;
       }
