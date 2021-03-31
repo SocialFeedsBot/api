@@ -134,9 +134,13 @@ module.exports = class Feeds extends Base {
     } catch (e) {
       res.status(501).json({ error: 'Missing Manage Webhooks permission.' });
     }
+    let oldHookers = []; // yes, hookers
     feeds = feeds.map(feed => {
       let webhook = webhooks.find(w => w.id === feed.webhook_id);
-      if (!webhook) return null;
+      if (!webhook) {
+        oldHookers.push(feed.webhook_id);
+        return null;
+      }
       return {
         type: feed.type,
         url: feed.url,
@@ -145,6 +149,13 @@ module.exports = class Feeds extends Base {
         options: feed.options || {}
       };
     }).filter(a => a);
+
+    oldHookers.forEach(async (webhookID) => {
+      const inHooker = await req.app.locals.db.collection('feeds').find({ webhookID }).toArray();
+      inHooker.forEach(async f => {
+        await req.app.locals.db.collection('feeds').deleteOne({ _id: f._id });
+      });
+    });
 
     res.status(200).json({ feeds, feedCount, page: page + 1, pages });
   }
