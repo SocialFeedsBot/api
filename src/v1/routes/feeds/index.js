@@ -245,11 +245,9 @@ module.exports = class Feeds extends Base {
       }
     }
 
-    let document = await req.app.locals.db.collection('feeds').findOne({
-      type: req.body.type,
-      url: req.body.url,
-      webhook_id: req.body.webhookID
-    });
+    let document = await req.app.locals.db.collection('feeds').find({ webhook_id: req.body.webhookID }).toArray();
+    document = document.filter(f => f.url.toLowerCase() === req.body.url &&
+      f.type.toLowerCase() === req.body.type.toLowerCase())[0];
     if (!document) {
       res.status(404).json({ success: false, error: 'Feed is non existent' });
       return;
