@@ -92,7 +92,6 @@ module.exports = class Status extends Base {
   async services(req, res) {
     if (req.app.locals.gw.connected) {
       const services = await req.app.locals.gw.action('serviceList', { name: 'gateway' });
-      console.log(services);
       res.status(200).json({ services });
     } else {
       res.status(200).json({ services: [] });

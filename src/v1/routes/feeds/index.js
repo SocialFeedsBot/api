@@ -234,12 +234,12 @@ module.exports = class Feeds extends Base {
       }
 
       guild = member.filter(({ id }) => id === req.body.guildID)[0];
-      if (!guild) {
+      if (!guild && !req.authInfo.admin) {
         res.status(404).json({ error: 'Unknown guild' });
         return;
       }
 
-      if (!(((guild.permissions & 1) << 3) || ((guild.permissions & 1) << 5))) {
+      if (!(((guild.permissions & 1) << 3) || ((guild.permissions & 1) << 5)) && !req.authInfo.admin) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }
@@ -384,7 +384,7 @@ module.exports = class Feeds extends Base {
       res.status(401).json({ success: false, error: 'Unauthorised' });
       return;
     }
-    req.authInfo = { isBot, userID, accessToken: token };
+    req.authInfo = { admin: isBot || config.admins.includes(userID), isBot, userID, accessToken: token };
     next();
   }
 
