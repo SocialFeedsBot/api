@@ -195,6 +195,19 @@ module.exports = class Feeds extends Base {
       return;
     }
 
+    let posted = await req.app.locals.db.collection('feeds').find({
+      type: req.body.type,
+      url: req.body.url,
+      guildID: req.body.guildID,
+      webhook_id: webhook.id,
+      webhook_token: webhook.token
+    }).toArray();
+
+    if (posted.length > 0) {
+      res.status(403).json({ success: false, error: 'This feed has already been created, please delete it first.' });
+      return;
+    }
+
     await req.app.locals.db.collection('feeds').insertOne({
       webhook_id: webhook.id,
       webhook_token: webhook.token,
