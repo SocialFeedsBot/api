@@ -34,12 +34,12 @@ module.exports = class Feeds extends Base {
 
     // Get all types of feeds.
     const feedCount = (await req.app.locals.db.collection('feeds').find(query).toArray()).length;
-    const twitter = await req.app.loca.db.collection('feeds').countDocuments({ type: 'twitter' });
-    const twitch = await req.app.loca.db.collection('feeds').countDocuments({ type: 'twitch' });
-    const rss = await req.app.loca.db.collection('feeds').countDocuments({ type: 'rss' });
-    const reddit = await req.app.loca.db.collection('feeds').countDocuments({ type: 'reddit' });
-    const statuspage = await req.app.loca.db.collection('feeds').countDocuments({ type: 'statuspage' });
-    const youtube = await req.app.loca.db.collection('feeds').countDocuments({ type: 'youtube' });
+    const twitter = await req.app.locals.db.collection('feeds').countDocuments({ type: 'twitter' });
+    const twitch = await req.app.locals.db.collection('feeds').countDocuments({ type: 'twitch' });
+    const rss = await req.app.locals.db.collection('feeds').countDocuments({ type: 'rss' });
+    const reddit = await req.app.locals.db.collection('feeds').countDocuments({ type: 'reddit' });
+    const statuspage = await req.app.locals.db.collection('feeds').countDocuments({ type: 'statuspage' });
+    const youtube = await req.app.locals.db.collection('feeds').countDocuments({ type: 'youtube' });
 
     res.status(200).json({
       feedCount, twitter, twitch, rss, reddit, statuspage, youtube
