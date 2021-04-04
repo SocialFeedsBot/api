@@ -227,19 +227,19 @@ module.exports = class Feeds extends Base {
    */
   async delete(req, res) {
     let guild;
-    if (!req.authInfo.isBot) {
+    if (!req.authInfo.isBot && !req.authInfo.admin) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
         member = await this.refreshUser(req, req.authInfo.userID, req.authInfo.accessToken);
       }
 
       guild = member.filter(({ id }) => id === req.body.guildID)[0];
-      if (!guild && !req.authInfo.admin) {
+      if (!guild) {
         res.status(404).json({ error: 'Unknown guild' });
         return;
       }
 
-      if (!(((guild.permissions & 1) << 3) || ((guild.permissions & 1) << 5)) && !req.authInfo.admin) {
+      if (!(((guild.permissions & 1) << 3) || ((guild.permissions & 1) << 5))) {
         res.status(401).json({ error: 'Unauthorized' });
         return;
       }
