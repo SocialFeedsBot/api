@@ -41,7 +41,7 @@ module.exports = class Status extends Base {
     }
 
     if (req.app.locals.gw.connected) {
-      req.app.locals.gw.action('restart', req.body, { restarter: req.authInfo.userID, panel: true });
+      req.app.locals.gw.restart(Object.assign(req.body, { restarter: req.authInfo.userID, panel: true }));
       res.status(200).json({ success: true });
     } else {
       res.status(500).json({ error: 'Gateway not connected' });
