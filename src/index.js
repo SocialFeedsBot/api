@@ -1,7 +1,7 @@
 // Constants
 const Eris = require('eris');
 const { MongoClient } = require('mongodb');
-const GatewayClient = require('gateway-client');
+const GatewayClient = require('./gateway');
 const Logger = require('./logger/');
 const Twitter = require('twitter');
 const express = require('express');

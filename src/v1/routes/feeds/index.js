@@ -13,6 +13,7 @@ module.exports = class Feeds extends Base {
     this.register('get', '/counts', this.getCounts.bind(this));
     this.register('get', '/:guildID', this.getID.bind(this), this.auth.bind(this));
     this.register('post', '/', this.post.bind(this), this.auth.bind(this));
+    this.register('patch', '/', this.patch.bind(this), this.auth.bind(this));
     this.register('delete', '/', this.delete.bind(this), this.auth.bind(this));
   }
 
@@ -221,6 +222,65 @@ module.exports = class Feeds extends Base {
   }
 
   /**
+   * PATCH a feed.
+   * @param {*} req {any} Request
+   * @param {*} res {any} Response
+   */
+  async patch(req, res) {
+    let guild;
+    if (!req.authInfo.isBot && !req.authInfo.admin) {
+      let member = req.app.locals.storedUsers.get(req.authInfo.userID);
+      if (!member) {
+        member = await this.refreshUser(req, req.authInfo.userID, req.authInfo.accessToken);
+      }
+
+      guild = member.filter(({ id }) => id === req.body.guildID)[0];
+      if (!guild) {
+        res.status(404).json({ error: 'Unknown guild' });
+        return;
+      }
+
+      if (!(((guild.permissions & 1) << 3) || ((guild.permissions & 1) << 5))) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+    }
+
+    let document = await req.app.locals.db.collection('feeds').find({ webhook_id: req.body.webhookID }).toArray();
+    document = document.filter(f => f.url.toLowerCase() === req.body.url.toLowerCase() &&
+      f.type.toLowerCase() === req.body.type.toLowerCase())[0];
+
+    if (!document) {
+      res.status(404).json({ success: false, error: 'Feed is non existent' });
+      return;
+    }
+
+    let id = document._id.toString();
+
+    document = {
+      webhook_id: document.webhook_id,
+      webhook_token: document.webhook_token,
+      type: document.type,
+      url: document.url,
+      guildID: document.guildID,
+      options: document.options || {}
+    };
+
+    Object.keys(req.body).forEach(key => {
+      if (key === 'options') {
+        Object.keys(req.body.options).forEach(option => {
+          document.options[option] = req.body.options[option];
+        });
+      } else {
+        document[key] = req.body[key];
+      }
+    });
+
+    await req.app.locals.db.collection('feeds').updateOne({ _id: id }, { $set: document }, { upsert: true });
+    res.status(200).json({ success: true });
+  }
+
+  /**
    * DELETE a feed from a server.
    * @param req {any} Request
    * @param res {any} Response
@@ -265,12 +325,23 @@ module.exports = class Feeds extends Base {
   async verifyFeed(req, res) {
     if (req.body.type === 'youtube') {
       try {
-        const { body } = await superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername=${req.body.url}&key=${config.youtubeKey}`)
+        const { body: username } = await superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername=${req.body.url}&key=${config.youtubeKey}`)
           .set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
 
-        if (body.items && body.items[0]) {
-          req.body.url = body.items[0].id;
+        const { body: id } = await superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${req.body.url}&key=${config.youtubeKey}`)
+          .set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
+
+        let user = username.items ? username.items[0] : id.items[0];
+        if (!user) {
+          res.status(400).json({ success: false, error: 'Cannot resolve YouTube account, ensure you provide just the channel ID or name.' });
+          return false;
         }
+
+        req.body.url = user.id;
+        return {
+          title: user.snippet.title,
+          icon: user.snippet.thumbnails.high.url
+        };
       } catch(err) {
         res.status(400).json({ success: false, error: err.response.body.error.message });
         return false;
