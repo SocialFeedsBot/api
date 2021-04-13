@@ -331,7 +331,12 @@ module.exports = class Feeds extends Base {
         const { body: id } = await superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${req.body.url}&key=${config.youtubeKey}`)
           .set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
 
-        let user = username.items ? username.items[0] : id.items[0];
+        let user;
+        if (username.items && username.items[0]) {
+          user = username.items[0];
+        } else if (id.items && id.items[0]) {
+          user = id.items[0];
+        }
         if (!user) {
           res.status(400).json({ success: false, error: 'Cannot resolve YouTube account, ensure you provide just the channel ID or name.' });
           return false;
