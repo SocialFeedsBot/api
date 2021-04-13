@@ -343,7 +343,7 @@ module.exports = class Feeds extends Base {
           icon: user.snippet.thumbnails.high.url
         };
       } catch(err) {
-        res.status(400).json({ success: false, error: err.response.body.error.message });
+        res.status(400).json({ success: false, error: err.response ? err.response.body.error.message : err.message });
         return false;
       }
     } else if (req.body.type === 'twitter') {
