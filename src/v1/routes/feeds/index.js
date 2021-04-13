@@ -80,7 +80,8 @@ module.exports = class Feeds extends Base {
       url: feed.url,
       guildID: feed.guildID,
       webhook: { id: feed.webhook_id, token: feed.webhook_token },
-      options: feed.options || {}
+      options: feed.options || {},
+      display: feed.display
     }));
 
     res.status(200).json({
@@ -153,7 +154,8 @@ module.exports = class Feeds extends Base {
         url: feed.url,
         channelID: webhook.channel_id,
         webhook: { id: feed.webhook_id, token: feed.webhook_token },
-        options: feed.options || {}
+        options: feed.options || {},
+        display: feed.display
       };
     }).filter(a => a);
 
@@ -173,8 +175,8 @@ module.exports = class Feeds extends Base {
    * @param res {any} Response
    */
   async post(req, res) {
-    const isValid = await this.verifyFeed(req, res);
-    if (!isValid) return;
+    const feedData = await this.verifyFeed(req, res);
+    if (!feedData) return;
 
     let guild;
     if (!req.authInfo.isBot) {
@@ -215,10 +217,11 @@ module.exports = class Feeds extends Base {
       type: req.body.type,
       url: req.body.url,
       guildID: req.body.guildID,
-      options: req.body.options || {}
+      options: req.body.options || {},
+      display: feedData
     });
 
-    res.status(200).json({ success: true });
+    res.status(200).json({ success: true, feedData });
   }
 
   /**
@@ -314,7 +317,7 @@ module.exports = class Feeds extends Base {
     }
 
     await req.app.locals.db.collection('feeds').deleteOne({ _id: document._id });
-    res.status(200).json({ success: true });
+    res.status(200).json({ success: true, display: document.display, type: document.type, url: document.url, options: document.options });
   }
 
   /**
@@ -353,14 +356,18 @@ module.exports = class Feeds extends Base {
       }
     } else if (req.body.type === 'twitter') {
       try {
-        await new Promise((resolve, reject) => {
-          req.app.locals.twitterClient.get('statuses/user_timeline', { screen_name: req.body.url, exclude_replies: true }, (error, tweets) => {
+        const user = await new Promise((resolve, reject) => {
+          req.app.locals.twitterClient.get('users/lookup', { screen_name: req.body.url }, (error, users) => {
             if (error) reject(error);
-            resolve(tweets);
+            if (!users[0]) reject('Unknown user');
+            resolve({
+              title: users[0].name,
+              icon: users[0].profile_image_url_https
+            });
           });
         });
+        return user;
       } catch(err) {
-        console.log(err);
         res.status(400).json({ success: false, error: 'Invalid Twitter Account' });
         return false;
       }
@@ -374,21 +381,36 @@ module.exports = class Feeds extends Base {
         res.status(400).json({ success: false, error: 'Invalid Twitch Channel' });
       } else {
         req.body.options = Object.assign(req.body.options || {}, { user_id: data[0].id });
+        return {
+          title: data.display_name,
+          icon: data.profile_image_url
+        };
       }
     } else if (req.body.type === 'rss') {
       try {
         await superagent.get(req.body.url).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)')
           .set('Accept', 'text/html,application/xhtml+xml,application/xml,text/xml');
+
+        return {
+          title: req.body.url,
+          icon: 'https://cdn.discordapp.com/emojis/644633161933914122.png'
+        };
       } catch(err) {
         res.status(400).json({ success: false, error: 'Invalid RSS URL' });
         return false;
       }
     } else if (req.body.type === 'reddit') {
       try {
-        const a = await superagent.get(`https://reddit.com/r/${req.body.url}/about.json`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
-        if (a.body.data.over18 && !req.body.nsfw) {
+        const { body: { data } } = await superagent.get(`https://reddit.com/r/${req.body.url}/about.json`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
+        if (data.over18 && !req.body.nsfw) {
           res.status(400).json({ success: false, error: 'Subreddit is over 18 and the specified channel is not an NSFW channel' });
+          return null;
         }
+
+        return {
+          title: data.display_name_prefixed,
+          icon: data.icon_img
+        };
       } catch(err) {
         res.status(400).json({ success: false, error: 'Invalid Subreddit name' });
         return false;
@@ -400,6 +422,11 @@ module.exports = class Feeds extends Base {
           res.status(400).json({ success: false, error: 'Invalid status page url, ensure it is managed by statuspage.io' });
           return false;
         }
+
+        return {
+          title: `Status page: ${new URL(req.body.url).hostname}`,
+          icon: 'https://cdn.discordapp.com/emojis/809109311271600138.png'
+        };
       } catch(err) {
         res.status(400).json({ success: false, error: 'Invalid status page url, ensure it is managed by statuspage.io' });
         return false;
