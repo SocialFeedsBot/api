@@ -60,7 +60,7 @@ module.exports = class Status extends Base {
       let data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
       userID = data.userID;
       isBot = !!data.bot;
-      auth = isBot;
+      auth = true;
     } catch(e) {
       auth = false;
     }
