@@ -36,7 +36,11 @@ module.exports = class Status extends Base {
    */
   async restart(req, res) {
     if (!req.authInfo.auth) {
-      res.status(500).json({ error: 'Authentication error' });
+      res.status(500).json({ auth: false, error: 'Authentication error' });
+      return;
+    }
+    if (!config.admins.includes(req.authInfo.userID) && !req.authInfo.isBot) {
+      res.status(200).json({ auth: false });
       return;
     }
 
@@ -56,7 +60,7 @@ module.exports = class Status extends Base {
       let data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
       userID = data.userID;
       isBot = !!data.bot;
-      auth = true;
+      auth = isBot;
     } catch(e) {
       auth = false;
     }
