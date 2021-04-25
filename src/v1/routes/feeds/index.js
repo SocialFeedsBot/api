@@ -358,8 +358,14 @@ module.exports = class Feeds extends Base {
       try {
         const user = await new Promise((resolve, reject) => {
           req.app.locals.twitterClient.get('users/lookup', { screen_name: req.body.url }, (error, users) => {
-            if (error) reject(error);
-            if (!users[0]) reject('Unknown user');
+            if (error) {
+              reject(error);
+              return;
+            }
+            if (!users[0]) {
+              reject('Unknown user');
+              return;
+            }
             resolve({
               title: users[0].name,
               icon: users[0].profile_image_url_https
