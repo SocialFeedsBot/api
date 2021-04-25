@@ -423,14 +423,14 @@ module.exports = class Feeds extends Base {
       }
     } else if (req.body.type === 'statuspage') {
       try {
-        const { body } = await superagent.get(`https://${new URL(req.body.url).hostname}/api/v2/scheduled-maintenances/upcoming.json`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
+        const { body } = await superagent.get(`https://${new URL(req.body.url).hostname}/api/v2/summary.json`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
         if (!body || !body.page || !body.scheduled_maintenances) {
           res.status(400).json({ success: false, error: 'Invalid status page url, ensure it is managed by statuspage.io' });
           return false;
         }
 
         return {
-          title: `Status page: ${new URL(req.body.url).hostname}`,
+          title: `${body.page.name} Status`,
           icon: 'https://cdn.discordapp.com/emojis/809109311271600138.png'
         };
       } catch(err) {
