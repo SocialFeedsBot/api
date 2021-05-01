@@ -29,6 +29,8 @@ module.exports = class Users extends Base {
       const { body: user } = await superagent.get('https://discord.com/api/v7/users/@me')
         .set('Authorization', `Bearer ${data.access_token}`);
 
+      user.isAdmin = config.admins.includes(user.id) || undefined;
+
       res.status(200).json(user);
       return null;
     });
