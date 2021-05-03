@@ -23,10 +23,10 @@ module.exports = class Status extends Base {
       const clusters = await req.app.locals.gw.action('stats', { name: 'cluster' });
       const feeds = await req.app.locals.gw.action('stats', { name: 'feeds' });
       const interactions = await req.app.locals.gw.action('stats', { name: 'interactions' });
-      const apis = await req.app.locals.gw.action('stats', { name: 'api' });
+      const apis = await req.app.locals.gw.action('stats', { name: 'api', id: 'all' });
       res.status(200).json({ clusters: clusters.flat(), interactions, feeds, apis });
     } else {
-      res.status(200).json({ clusters: [], feeds: [], apis: [] });
+      res.status(200).json({ clusters: [], interactions: [], feeds: [], apis: [] });
     }
   }
 
