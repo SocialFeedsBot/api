@@ -71,7 +71,6 @@ class GatewayClient extends EventEmitter {
    * @param message {string}
    */
   onDisconnect (code, message) {
-    console.log('DISCONNECTED FROM GATEWAY, CODE:', code, message)
     this.connected = false;
     this.attempts++;
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
@@ -125,7 +124,8 @@ class GatewayClient extends EventEmitter {
             case 'stats': {
               let stats = {
                 uptime: process.uptime() * 1000,
-                memory: process.memoryUsage().heapUsed
+                memory: process.memoryUsage().heapUsed,
+                id: this.id
               };
 
               if (this.getExtraStats) {
