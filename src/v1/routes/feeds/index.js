@@ -279,7 +279,7 @@ module.exports = class Feeds extends Base {
       }
     });
 
-    await req.app.locals.db.collection('feeds').updateOne({ _id: id }, { $set: document }, { upsert: true });
+    await req.app.locals.db.collection('feeds').updateOne({ _id: id }, { $set: document });
     res.status(200).json({ success: true });
   }
 
