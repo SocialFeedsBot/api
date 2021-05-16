@@ -221,6 +221,29 @@ module.exports = class Feeds extends Base {
       display: feedData
     });
 
+    let feeds = await req.app.locals.db.collection('feeds').find({ guildID: req.body.guildID }).toArray();
+    let webhooks;
+    try {
+      webhooks = await req.app.locals.client.getGuildWebhooks(req.body.guildID);
+    } catch (e) {
+      res.status(501).json({ error: 'Missing Manage Webhooks permission.' });
+    }
+    feeds = feeds.map(feed => {
+      let wh = webhooks.find(w => w.id === feed.webhook_id);
+      if (!wh) {
+        return null;
+      }
+      return {
+        type: feed.type,
+        url: feed.url,
+        channelID: wh.channel_id,
+        webhook: { id: feed.webhook_id, token: feed.webhook_token },
+        options: feed.options || {},
+        display: feed.display
+      };
+    }).filter(a => a);
+    req.app.locals.gw.action('feed_update', { name: 'ws' }, { guildID: req.body.guildID, feeds });
+
     res.status(200).json({ success: true, feedData });
   }
 
@@ -279,6 +302,29 @@ module.exports = class Feeds extends Base {
       }
     });
 
+    let feeds = await req.app.locals.db.collection('feeds').find({ guildID: req.body.guildID }).toArray();
+    let webhooks;
+    try {
+      webhooks = await req.app.locals.client.getGuildWebhooks(req.body.guildID);
+    } catch (e) {
+      res.status(501).json({ error: 'Missing Manage Webhooks permission.' });
+    }
+    feeds = feeds.map(feed => {
+      let wh = webhooks.find(w => w.id === feed.webhook_id);
+      if (!wh) {
+        return null;
+      }
+      return {
+        type: feed.type,
+        url: feed.url,
+        channelID: wh.channel_id,
+        webhook: { id: feed.webhook_id, token: feed.webhook_token },
+        options: feed.options || {},
+        display: feed.display
+      };
+    }).filter(a => a);
+    req.app.locals.gw.action('feed_update', { name: 'ws' }, { guildID: req.body.guildID, feeds });
+
     await req.app.locals.db.collection('feeds').updateOne({ _id: id }, { $set: document });
     res.status(200).json({ success: true });
   }
@@ -317,6 +363,30 @@ module.exports = class Feeds extends Base {
     }
 
     await req.app.locals.db.collection('feeds').deleteOne({ _id: document._id });
+
+    let feeds = await req.app.locals.db.collection('feeds').find({ guildID: req.body.guildID }).toArray();
+    let webhooks;
+    try {
+      webhooks = await req.app.locals.client.getGuildWebhooks(req.body.guildID);
+    } catch (e) {
+      res.status(501).json({ error: 'Missing Manage Webhooks permission.' });
+    }
+    feeds = feeds.map(feed => {
+      let wh = webhooks.find(w => w.id === feed.webhook_id);
+      if (!wh) {
+        return null;
+      }
+      return {
+        type: feed.type,
+        url: feed.url,
+        channelID: wh.channel_id,
+        webhook: { id: feed.webhook_id, token: feed.webhook_token },
+        options: feed.options || {},
+        display: feed.display
+      };
+    }).filter(a => a);
+    req.app.locals.gw.action('feed_update', { name: 'ws' }, { guildID: req.body.guildID, feeds });
+
     res.status(200).json({ success: true, display: document.display, type: document.type, url: document.url, options: document.options });
   }
 
