@@ -1,7 +1,6 @@
 /* Guilds Route */
 const Base = require('../../../structures/Route');
 const jwt = require('jsonwebtoken');
-const superagent = require('superagent');
 const config = require('../../../../config.json');
 
 module.exports = class Guilds extends Base {
@@ -34,9 +33,7 @@ module.exports = class Guilds extends Base {
       if (req.app.locals.storedUsers.get(data.userID)) {
         res.status(200).json(req.app.locals.storedUsers.get(data.userID));
       } else {
-        const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
-          .set('Authorization', `Bearer ${data.access_token}`);
-
+        const guilds = await req.app.locals.discordRest.api.users('@me').guilds.get(null, null, data.access_token);
         let shared = await this.refreshUser(req.app, data.userID, guilds);
         res.status(200).json(guilds.filter(g => shared.includes(g.id)));
       }
@@ -98,9 +95,7 @@ module.exports = class Guilds extends Base {
       if (req.app.locals.storedUsers.get(data.userID)) {
         guild = req.app.locals.storedUsers.get(data.userID).filter(g => g.id === req.params.id)[0];
       } else {
-        const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
-          .set('Authorization', `Bearer ${data.access_token}`);
-
+        const guilds = await req.app.locals.discordRest.api.users('@me').guilds.get(null, null, data.access_token);
         let shared = await this.refreshUser(req.app, data.userID, guilds);
         guild = guilds.filter(g => shared.indexOf(g.id) !== -1).filter(g => g.id === req.params.id)[0];
       }
@@ -142,9 +137,7 @@ module.exports = class Guilds extends Base {
     if (app.locals.storedUsers.get(data.userID)) {
       guild = app.locals.storedUsers.get(data.userID).filter(g => g.id === id)[0];
     } else {
-      const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
-        .set('Authorization', `Bearer ${data.access_token}`);
-
+      const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, data.access_token);
       let shared = await this.refreshUser(app, data.userID, guilds);
       guild = guilds.filter(g => shared.includes(g.id)).filter(g => g.id === id)[0];
     }

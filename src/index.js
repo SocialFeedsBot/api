@@ -1,5 +1,6 @@
 // Constants
 const Eris = require('eris');
+const Rest = require('./discord/RequestHandler');
 const { MongoClient } = require('mongodb');
 const GatewayClient = require('./gateway');
 const Logger = require('./logger/');
@@ -19,7 +20,7 @@ app.use(cors());
 const logger = new Logger('API', [config.token, config.jwtSecret, config.twitterConsumerKey,
   config.twitterConsumerSecret, config.youtubeKey, config.clientSecret, config.gateway.secret]);
 
-process.on('unhandledRejection', (err) => logger.error(`Unhandled rejection: ${err.stack}`));
+process.on('unhandledRejection', (err, p) => logger.error(`Unhandled rejection: ${err.stack} ${require('util').inspect(p, { depth: 5 })}`));
 
 // Versions
 const v1 = require('./v1/');
@@ -36,6 +37,7 @@ async function start(gw) {
   const db = mongoClient.db();
   const client = new Eris(`Bot ${config.token}`, { restMode: true });
 
+  app.locals.discordRest = new Rest({ token: config.token });
   app.locals.db = db;
   app.locals.gw = gw;
   app.locals.client = client;
@@ -50,6 +52,17 @@ async function start(gw) {
     bearer_token: body.access_token
   });
 
+  setTwitchToken();
+
+  await db.collection('feeds').createIndex({ type: 1 });
+  await db.collection('feeds').createIndex({ url: 1 });
+
+  app.listen(config.port);
+
+  gw.sendReady();
+}
+
+async function setTwitchToken() {
   const { body: twitch } = await superagent.post('https://id.twitch.tv/oauth2/token')
     .query({
       client_id: config.twitchClient,
@@ -58,13 +71,7 @@ async function start(gw) {
       scope: 'user:read:email'
     });
   app.locals.twitchToken = twitch.access_token;
-
-  await db.collection('feeds').createIndex({ type: 1 });
-  await db.collection('feeds').createIndex({ url: 1 });
-
-  app.listen(config.port);
-
-  gw.sendReady();
+  setTimeout(() => setTwitchToken(), twitch.expires_in);
 }
 
 const worker = new GatewayClient(config.gateway.use, 'api', config.gateway.address, config.gateway.secret);

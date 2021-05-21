@@ -588,9 +588,7 @@ module.exports = class Feeds extends Base {
   }
 
   async refreshUser(req, id, token) {
-    const { body: guilds } = await superagent.get('https://discord.com/api/v7/users/@me/guilds')
-      .set('Authorization', `Bearer ${token}`);
-
+    const guilds = await req.app.locals.discordRest.api.users('@me').guilds.get(null, null, token);
     req.app.locals.storedUsers.set(id, guilds);
     return guilds;
   }
