@@ -39,7 +39,7 @@ module.exports = class RESTHandler {
    * @param _attempts {number?}
    * @param immediate {boolean?}
    */
-  request (method, endpoint, data = {}, query = {}, bearerToken = null, _attempts = 0, immediate = false) {
+  request (method, endpoint, data = {}, query = {}, authToken = null, _attempts = 0, immediate = false) {
     const route = this.getRoute(method, endpoint);
     if (!this.ratelimits[route]) {
       this.ratelimits[route] = new Bucket();
@@ -50,7 +50,7 @@ module.exports = class RESTHandler {
         const options = {
           validateStatus: null,
           headers: {
-            Authorization: bearerToken ? `Bearer ${bearerToken}` : `Bot ${this.token}`,
+            Authorization: authToken ? authToken : `Bot ${this.token}`,
             'Content-Type': 'application/json'
           },
           baseURL: this.baseURL,
@@ -81,13 +81,13 @@ module.exports = class RESTHandler {
               //  Use the retry-after header to schedule the request to retry
               if (res.headers['retry-after']) {
                 setTimeout(() => {
-                  this.request(method, endpoint, data, query, bearerToken, _attempts, true)
+                  this.request(method, endpoint, data, query, authToken, _attempts, true)
                     .then(resolve)
                     .catch(reject);
                 }, +res.headers['retry-after'] * 1000);
               } else {
                 //  Retry immediately if no retry-after header
-                this.request(method, endpoint, data, query, bearerToken, _attempts, true)
+                this.request(method, endpoint, data, query, authToken, _attempts, true)
                   .then(resolve)
                   .catch(reject);
               }

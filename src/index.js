@@ -20,7 +20,7 @@ app.use(cors());
 const logger = new Logger('API', [config.token, config.jwtSecret, config.twitterConsumerKey,
   config.twitterConsumerSecret, config.youtubeKey, config.clientSecret, config.gateway.secret]);
 
-process.on('unhandledRejection', (err, p) => logger.error(`Unhandled rejection: ${err.stack} ${require('util').inspect(p, { depth: 5 })}`));
+process.on('unhandledRejection', (err, p) => logger.error(`Unhandled rejection: ${err.stack} ${require('util').inspect(p, { depth: 2 })}`));
 
 // Versions
 const v1 = require('./v1/');
@@ -40,6 +40,7 @@ async function start(gw) {
   app.locals.discordRest = new Rest({ token: config.token });
   app.locals.db = db;
   app.locals.gw = gw;
+  app.locals.logger = logger;
   app.locals.client = client;
   app.locals.storedUsers = new Map();
   app.startedAt = Date.now();

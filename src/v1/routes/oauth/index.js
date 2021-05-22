@@ -25,7 +25,7 @@ module.exports = class Status extends Base {
     try {
       body = (await superagent.post('https://discord.com/api/oauth2/token')
         .set('Content-Type', 'application/x-www-form-urlencoded')
-        .set('Authorization', `Basic ${btoa(`${config.clientID}:${config.clientSecret}`)}`)
+        .set('Authorization', `Basic ${Buffer.from(`${config.clientID}:${config.clientSecret}`).toString('base64')}`)
         .send({
           code: code,
           grant_type: 'authorization_code',
@@ -37,7 +37,7 @@ module.exports = class Status extends Base {
       return;
     }
 
-    const user = await req.app.locals.discordRest.api.users('@me').get(null, null, body.access_token);
+    const user = await req.app.locals.discordRest.api.users('@me').get(null, null, `Bearer ${body.access_token}`);
     jwt.sign(Object.assign(body, { userID: user.id }), config.jwtSecret, { expiresIn: body.expires_in }, (err, token) => {
       if (err) {
         res.status(500).json({ error: err.message });

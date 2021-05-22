@@ -588,7 +588,7 @@ module.exports = class Feeds extends Base {
   }
 
   async refreshUser(req, id, token) {
-    const guilds = await req.app.locals.discordRest.api.users('@me').guilds.get(null, null, token);
+    const guilds = await req.app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${token}`);
     req.app.locals.storedUsers.set(id, guilds);
     return guilds;
   }
