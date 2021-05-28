@@ -507,9 +507,12 @@ module.exports = class Feeds extends Base {
         res.status(400).json({ success: false, error: 'Invalid status page url, ensure it is managed by statuspage.io' });
         return false;
       }
+    } else {
+      res.status(400).json({ success: false, error: 'Invalid feed type' });
+      return false;
     }
 
-    return true;
+    return false;
   }
 
   /**
