@@ -222,6 +222,7 @@ module.exports = class Feeds extends Base {
     });
     req.app.locals.gw.action('feed_create', { name: 'ws' }, {
       guildID: req.body.guildID,
+      channelID: webhook.channel_id,
       type: req.body.type,
       url: req.body.url,
       webhook: { id: webhook, token: webhook.token },
@@ -276,6 +277,7 @@ module.exports = class Feeds extends Base {
       guildID: document.guildID,
       options: document.options || {}
     };
+    let oldData = JSON.parse(JSON.stringify(document));
 
     Object.keys(req.body).forEach(key => {
       if (key === 'options') {
@@ -289,6 +291,7 @@ module.exports = class Feeds extends Base {
 
     req.app.locals.gw.action('feed_update', { name: 'ws' }, {
       guildID: document.guildID,
+      oldData: oldData,
       type: document.type,
       url: document.url,
       webhook: { id: document.webhook_id, token: document.webhook_token },
@@ -484,7 +487,7 @@ module.exports = class Feeds extends Base {
     const avatar = `data:image/png;base64,${body.toString('base64')}`;
 
     return client.createChannelWebhook(channelID, {
-      name: 'DiscordFeeds',
+      name: 'SocialFeeds',
       avatar: avatar
     }, 'Create Feed Webhook');
   }
