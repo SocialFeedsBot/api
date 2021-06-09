@@ -458,8 +458,8 @@ module.exports = class Feeds extends Base {
       } else {
         req.body.options = Object.assign(req.body.options || {}, { user_id: data[0].id });
         return {
-          title: data.display_name,
-          icon: data.profile_image_url
+          title: data[0].display_name,
+          icon: data[0].profile_image_url
         };
       }
     } else if (req.body.type === 'rss') {
