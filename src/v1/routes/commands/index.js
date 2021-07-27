@@ -31,9 +31,9 @@ module.exports = class Users extends Base {
     }
 
     const command = req.query.command;
-    const toggle = req.query.toggle;
+    const toggle = req.query.toggle !== 'false' ? decodeURIComponent(req.query.toggle) : 'no';
 
-    await req.app.locals.redis.set(`commands:${command}:disabled`, toggle === 'disable');
+    await req.app.locals.redis.set(`commands:${command}:disabled`, toggle);
     res.status(200);
   }
 
