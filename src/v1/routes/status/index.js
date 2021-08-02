@@ -20,13 +20,13 @@ module.exports = class Status extends Base {
    */
   async get(req, res) {
     if (req.app.locals.gw.connected) {
-      const clusters = await req.app.locals.gw.action('stats', { name: 'cluster' });
+      const shards = await req.app.locals.gw.action('stats', { name: 'shards' });
       const feeds = await req.app.locals.gw.action('stats', { name: 'feeds' });
       const interactions = await req.app.locals.gw.action('stats', { name: 'interactions' });
       const apis = await req.app.locals.gw.action('stats', { name: 'api' });
-      res.status(200).json({ clusters: clusters.flat(), interactions, feeds, apis });
+      res.status(200).json({ shards: shards.flat(), interactions, feeds, apis });
     } else {
-      res.status(200).json({ clusters: [], interactions: [], feeds: [], apis: [] });
+      res.status(200).json({ shards: [], interactions: [], feeds: [], apis: [] });
     }
   }
 

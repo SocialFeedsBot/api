@@ -200,7 +200,7 @@ class GatewayClient extends EventEmitter {
     if (this.service !== 'api') return [];
     const id = (process.hrtime().reduce((a, b) => a + b) + Date.now()).toString(36);
     return new Promise((resolve) => {
-      this.send(OPCodes.ACTION, guilds, { id, type: 'requestSharedGuilds', destination: { name: 'cluster' } });
+      this.send(OPCodes.ACTION, guilds, { id, type: 'requestSharedGuilds', destination: { name: 'shards' } });
       this.once(`resolve_${id}`, resolve);
     });
   }
