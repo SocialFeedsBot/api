@@ -267,7 +267,7 @@ module.exports = class Feeds extends Base {
       return;
     }
 
-    let id = document._id.toString();
+    let id = document._id;
 
     document = {
       webhook_id: document.webhook_id,
@@ -299,7 +299,7 @@ module.exports = class Feeds extends Base {
       display: document.display || {}
     });
 
-    await req.app.locals.db.collection('feeds').updateOne({ _id: id }, { $set: document });
+    await req.app.locals.db.collection('feeds').updateOne({ _id: id }, { $set: document }, { $upsert: true });
     res.status(200).json({ success: true });
   }
 
