@@ -279,6 +279,9 @@ module.exports = class Feeds extends Base {
     };
     let oldData = JSON.parse(JSON.stringify(document));
 
+    if (req.body.newURL) {
+      document.url = req.body.newURL;
+    }
     Object.keys(req.body).forEach(key => {
       if (key === 'options') {
         Object.keys(req.body.options).forEach(option => {
