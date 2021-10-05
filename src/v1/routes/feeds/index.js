@@ -53,7 +53,7 @@ module.exports = class Feeds extends Base {
    * @param res {any} Response
    */
   async getAll(req, res) {
-    if (!req.authInfo.isBot && !config.admins.includes(req.authInfo.userID)) return;
+    if (!req.authInfo.isBot || !config.admins.includes(req.authInfo.userID)) return;
     const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
 
     // Fix query
