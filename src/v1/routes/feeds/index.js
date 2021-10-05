@@ -99,7 +99,7 @@ module.exports = class Feeds extends Base {
    */
   async getID(req, res) {
     let guild;
-    if (!req.authInfo.isBot) {
+    if (!req.authInfo.isBot || !config.admins.includes(req.authInfo?.userID)) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
         member = await this.refreshUser(req, req.authInfo.userID, req.authInfo.accessToken);
