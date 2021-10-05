@@ -53,7 +53,10 @@ module.exports = class Feeds extends Base {
    * @param res {any} Response
    */
   async getAll(req, res) {
-    if (!req.authInfo.isBot || !config.admins.includes(req.authInfo.userID)) return;
+    if (!req.authInfo.isBot && !config.admins.includes(req.authInfo.userID)) {
+      res.status(401);
+      return;
+    }
     const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
 
     // Fix query
@@ -99,7 +102,7 @@ module.exports = class Feeds extends Base {
    */
   async getID(req, res) {
     let guild;
-    if (!req.authInfo.isBot || !config.admins.includes(req.authInfo?.userID)) {
+    if (!req.authInfo.isBot && !config.admins.includes(req.authInfo?.userID)) {
       let member = req.app.locals.storedUsers.get(req.authInfo.userID);
       if (!member) {
         member = await this.refreshUser(req, req.authInfo.userID, req.authInfo.accessToken);
@@ -107,7 +110,10 @@ module.exports = class Feeds extends Base {
 
       guild = member.filter(({ id }) => id === req.params.guildID)[0];
       const hasPerms = this.checkPermissions(req, res, guild);
-      if (!hasPerms) return;
+      if (!hasPerms) {
+        res.status(401);
+        return;
+      }
     }
 
     const feedCount = (await req.app.locals.db.collection('feeds').find({ guildID: req.params.guildID }).toArray()).length;
