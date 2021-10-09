@@ -204,6 +204,13 @@ module.exports = class Feeds extends Base {
       return;
     }
 
+    if (req.body.dashboard) {
+      await this.sendFeedMessage(req.app.locals.client, webhook, req.authInfo.userID, {
+        ...req.body,
+        display: feedData
+      });
+    }
+
     let posted = await req.app.locals.db.collection('feeds').find({
       type: req.body.type,
       url: req.body.url,
@@ -499,6 +506,24 @@ module.exports = class Feeds extends Base {
       name: 'SocialFeeds',
       avatar: avatar
     }, 'Create Feed Webhook');
+  }
+
+  async sendFeedMessage(client, webhook, userID, feed) {
+    const user = await client.getRESTUser(userID);
+    const feedType = {
+      youtube: 'YouTube',
+      reddit: 'Reddit',
+      rss: 'RSS',
+      twitch: 'Twitch',
+      twitter: 'Twitter',
+      statuspage: 'Status Page'
+    }[feed.type];
+    return client.executeWebhook(webhook.id, webhook.token, {
+      content: [
+        `**${user.username}#${user.discriminator}** has added ${feedType} feed for **${feed.display && feed.display.title ? feed.display.title : feed.url}** via dashboard.`,
+        'Most recent updates will appear here.'
+      ].join('\n')
+    });
   }
 
   /**
