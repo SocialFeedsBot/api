@@ -82,7 +82,8 @@ module.exports = class Feeds extends Base {
       type: feed.type,
       url: feed.url,
       guildID: feed.guildID,
-      webhook: { id: feed.webhook_id, token: feed.webhook_token },
+      webhookID: feed.webhook_id,
+      webhookToken: feed.webhook_token,
       options: feed.options || {},
       display: feed.display
     }));
@@ -159,7 +160,8 @@ module.exports = class Feeds extends Base {
         type: feed.type,
         url: feed.url,
         channelID: webhook.channel_id,
-        webhook: { id: feed.webhook_id, token: feed.webhook_token },
+        webhookID: feed.webhook_id,
+        webhookToken: feed.webhook_token,
         options: feed.options || {},
         display: feed.display
       };
@@ -294,6 +296,7 @@ module.exports = class Feeds extends Base {
 
     if (req.body.newURL) {
       document.url = req.body.newURL;
+      delete req.body.newURL;
     }
     Object.keys(req.body).forEach(key => {
       if (key === 'options') {
