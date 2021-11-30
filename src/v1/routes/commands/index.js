@@ -38,7 +38,7 @@ module.exports = class Users extends Base {
       return;
     }
 
-    let keys = await req.app.locals.redis.get('commands:*:disabled');
+    let keys = await req.app.locals.redis.keys('commands:*:disabled');
     let cmds = await Promise.all([...keys.map(key => req.app.locals.redis.get(key))])
     cmds = cmds.filter(cmd => cmd !== 'no').map(v => JSON.parse(v));
 
