@@ -9,7 +9,7 @@ module.exports = class Users extends Base {
     super();
 
     this.register('get', '/', this.get.bind(this));
-    this.register('get', '/disabled', this.getDisabled.bind(this));
+    this.register('get', '/disabled', this.getDisabled.bind(this), this.auth.bind(this));
     this.register('post', '/toggle', this.toggle.bind(this), this.auth.bind(this));
   }
 
@@ -81,5 +81,35 @@ module.exports = class Users extends Base {
     req.authInfo = { admin: isBot || config.admins.includes(userID), isBot, userID, accessToken: token };
     next();
   }
+
+   /**
+   * Middleware to verify the person sending the request is authorised to do so.
+   * @param req {any} Request
+   * @param res {any} Response
+   * @param next {any} Next
+   */
+  auth(req, res, next) {
+    let userID;
+    let isBot;
+    let auth;
+    let token;
+    try {
+       let data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
+       userID = data.userID;
+       isBot = !!data.bot;
+       token = data.access_token;
+       auth = true;
+     } catch(e) {
+       res.status(401).json({ success: false, error: 'Not authenticated' });
+        auth = false;
+      }
+  
+      if (!auth) {
+        res.status(401).json({ success: false, error: 'Unauthorised' });
+        return;
+      }
+      req.authInfo = { admin: isBot || config.admins.includes(userID), isBot, userID, accessToken: token };
+      next();
+    }
 
 };
