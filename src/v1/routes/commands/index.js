@@ -9,6 +9,7 @@ module.exports = class Users extends Base {
     super();
 
     this.register('get', '/', this.get.bind(this));
+    this.register('get', '/disabled', this.getDisabled.bind(this));
     this.register('post', '/toggle', this.toggle.bind(this), this.auth.bind(this));
   }
 
@@ -26,8 +27,25 @@ module.exports = class Users extends Base {
     }
   }
 
+  /**
+   * Get a list of disabled commands.
+   * @param {*} req 
+   * @param {*} res 
+   */
+  async getDisabled(req, res) {
+    if (!req.authInfo || (!req.authInfo.isBot && !req.authInfo.admin)) {
+      res.status(403);
+      return;
+    }
+
+    let keys = await req.app.locals.redis.get('commands:*:disabled');
+    let cmds = await Promise.all([...keys.map(key => req.app.locals.redis.get(key))])
+    cmds = cmds.filter(cmd => cmd !== 'no').map(v => JSON.parse(v));
+
+    res.status(200).json(cmds);
+  }
+
   async toggle(req, res) {
-    console.log(req.authInfo)
     if (!req.authInfo || (!req.authInfo.isBot && !req.authInfo.admin)) {
       res.status(403);
       return;
