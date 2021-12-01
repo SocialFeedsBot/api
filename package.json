@@ -25,7 +25,7 @@
     "express": "^4.17.1",
     "ioredis": "^4.27.6",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^3.6.6",
+    "mongodb": "^4.2.1",
     "superagent": "^6.1.0",
     "twitter": "^1.7.1"
   }
