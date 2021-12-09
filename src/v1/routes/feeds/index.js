@@ -203,7 +203,13 @@ module.exports = class Feeds extends Base {
     try {
       webhook = await this.createWebhook(req.app.locals.client, req.body.channelID);
     } catch(e) {
-      res.status(403).json({ success: false, error: 'I do not have permissions to create webhooks.' });
+      if (e.message.includes('Maximum number of webhooks reached')) {
+        res.status(403).json({ success: false, error: 'Maximum number of webhooks reached for this channel.' });
+      } else if (e.message.includes('Missing Permissions')) {
+        res.status(403).json({ success: false, error: 'I do not have permissions to create webhooks.' });
+      } else {
+        res.status(403).json({ success: false, error: `Unknown error: \`${e.message}\`` });
+      }
       return;
     }
 

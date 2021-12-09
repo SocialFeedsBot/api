@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 
 // Start
 async function start(gw) {
-  const mongoClient = await MongoClient.connect(config.databaseURL, { useNewUrlParser: true, useUnifiedTopology: true });
+  const mongoClient = await MongoClient.connect(config.databaseURL, { useUnifiedTopology: true });
   const db = mongoClient.db();
   const client = new Eris(`Bot ${config.token}`, { restMode: true });
 
