@@ -2,4 +2,4 @@
 
 module.exports.API_URL               = 'https://discord.com/api';
 module.exports.CDN_URL               = 'https://cdn.discordapp.com';
-module.exports.API_VERSION           = 8;
+module.exports.API_VERSION           = 10;
