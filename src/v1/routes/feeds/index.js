@@ -242,15 +242,6 @@ module.exports = class Feeds extends Base {
       options: req.body.options || {},
       display: feedData
     });
-    req.app.locals.gw.action('feed_create', { name: 'ws' }, {
-      guildID: req.body.guildID,
-      channelID: webhook.channel_id,
-      type: req.body.type,
-      url: req.body.url,
-      webhook: { id: webhook, token: webhook.token },
-      options: req.body.options || {},
-      display: feedData
-    });
 
     res.status(200).json({ success: true, feedData });
   }
@@ -315,16 +306,6 @@ module.exports = class Feeds extends Base {
       }
     });
 
-    req.app.locals.gw.action('feed_update', { name: 'ws' }, {
-      guildID: document.guildID,
-      oldData: oldData,
-      type: document.type,
-      url: document.url,
-      webhook: { id: document.webhook_id, token: document.webhook_token },
-      options: document.options || {},
-      display: document.display || {}
-    });
-
     await req.app.locals.db.collection('feeds').updateOne({ _id: id }, { $set: document }, { $upsert: true });
     res.status(200).json({ success: true });
   }
@@ -363,7 +344,6 @@ module.exports = class Feeds extends Base {
     }
 
     await req.app.locals.db.collection('feeds').deleteOne({ _id: document._id });
-    req.app.locals.gw.action('feed_delete', { name: 'ws' }, { guildID: req.body.guildID, webhook_id: req.body.webhookID, url: document.url, type: document.type });
 
     res.status(200).json({ success: true, display: document.display, type: document.type, url: document.url, options: document.options });
   }
