@@ -469,6 +469,24 @@ module.exports = class Feeds extends Base {
         res.status(400).json({ success: false, error: 'Invalid Subreddit name' });
         return false;
       }
+    } else if (req.body.type === 'roblox-group') {
+      try {
+        const { body: { data } } = await superagent.get(`https://groups.roblox.com/v2/groups?groupIds=${req.body.url}`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
+
+        if (!data[0]) {
+          res.status(400).json({ success: false, error: 'No group found. make sure you use the ID.' });
+          return false;
+        }
+
+        req.body.url = data[0].id;
+
+        return {
+          title: data[0].name
+        };
+      } catch(err) {
+        res.status(400).json({ success: false, error: 'No group found or ROBLOX API down. Make sure you use the ID and try again later.' });
+        return false;
+      }
     } else if (req.body.type === 'statuspage') {
       try {
         const { body } = await superagent.get(`https://${new URL(req.body.url).hostname}/api/v2/summary.json`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
