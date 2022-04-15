@@ -41,9 +41,10 @@ module.exports = class Feeds extends Base {
     const reddit = await req.app.locals.db.collection('feeds').countDocuments({ type: 'reddit' });
     const statuspage = await req.app.locals.db.collection('feeds').countDocuments({ type: 'statuspage' });
     const youtube = await req.app.locals.db.collection('feeds').countDocuments({ type: 'youtube' });
+    const rblxGroup = await req.app.locals.db.collection('feeds').countDocuments({ type: 'roblox-group' });
 
     res.status(200).json({
-      feedCount, twitter, twitch, rss, reddit, statuspage, youtube
+      feedCount, twitter, twitch, rss, reddit, statuspage, youtube, rblxGroup
     });
   }
 
