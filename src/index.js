@@ -15,6 +15,11 @@ const bodyParser = require('body-parser');
 
 // Init
 const app = express();
+app.use(bodyParser.json({
+  verify: (req, res, buf, encoding) => {
+    if (req.url.includes('webhook')) req.rawBody = buf;
+  }
+}));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
