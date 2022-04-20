@@ -27,7 +27,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.2.1",
     "stripe": "^8.218.0",
-    "superagent": "^6.1.0",
+    "superagent": "^7.1.2",
     "twitter": "^1.7.1"
   }
 }
