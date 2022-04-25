@@ -12,6 +12,7 @@ module.exports = class Premium extends Base {
     this.register('get', '/customers', this.getCustomers.bind(this), this.auth.bind(this));
     this.register('put', '/customers', this.putCustomers.bind(this), this.auth.bind(this));
     this.register('post', '/create-checkout', this.createCheckout.bind(this), this.auth.bind(this));
+    this.register('get', '/status/:user', this.getStatus.bind(this), this.auth.bind(this));
     this.register('post', '/webhook', this.webhook.bind(this));
   }
 
@@ -60,6 +61,15 @@ module.exports = class Premium extends Base {
     return;
   }
 
+  async getStatus (req, res) {
+    const status = await req.app.locals.db.collection('premium').findOne({ discordID: req.params.user });
+    if (!status) {
+      res.status(200).json({ premium: false });
+    } else {
+      res.status(200).json({ premium: true, ...status });
+    }
+  }
+
   async webhook (req, res) {
     const sig = req.headers['stripe-signature'];
 
@@ -93,7 +103,8 @@ module.exports = class Premium extends Base {
           { _id: object.customer },
           { $set: {
             expires: object.current_period_end,
-            subscriptionStatus: object.status
+            subscriptionStatus: object.status,
+            tier: config.stripeProducts.indexOf(object.plan.product) + 1
           } },
           { $upsert: true }
         );

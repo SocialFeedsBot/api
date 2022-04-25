@@ -24,7 +24,13 @@ module.exports = class Status extends Base {
       const feeds = await req.app.locals.gw.action('stats', { name: 'feeds' });
       const interactions = await req.app.locals.gw.action('stats', { name: 'interactions' });
       const apis = await req.app.locals.gw.action('stats', { name: 'api' });
-      res.status(200).json({ shards: shards.flat(), interactions, feeds, apis });
+      res.status(200).json({ shards: shards.flat().map(shard => ({
+        uptime: shard.uptime,
+        memory: shard.memory,
+        id: shard.id,
+        guilds: shard.guilds,
+        shards: shard.shards.map(s => ({ id: s.shard, status: s.ok ? 'ready' : s.started ? 'resuming' : 'disconnected', guilds: s.num_guilds }))
+      })), interactions, feeds, apis });
     } else {
       res.status(200).json({ shards: [], interactions: [], feeds: [], apis: [] });
     }

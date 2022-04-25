@@ -291,7 +291,6 @@ module.exports = class Feeds extends Base {
       guildID: document.guildID,
       options: document.options || {}
     };
-    let oldData = JSON.parse(JSON.stringify(document));
 
     if (req.body.newURL) {
       document.url = req.body.newURL;

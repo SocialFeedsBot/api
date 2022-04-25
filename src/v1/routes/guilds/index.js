@@ -105,8 +105,8 @@ module.exports = class Guilds extends Base {
         return;
       }
 
-      const g = (await req.app.locals.gw.action('getGuild', { name: 'shards' }, { guildID: req.params.id })).filter(c => c)[0];
-      res.status(200).json(g.channels);
+      const g = (await req.app.locals.gw.action('getGuild', { name: 'shards' }, { guildID: req.params.id })).flat();
+      res.status(200).json(g);
     });
   }
 
