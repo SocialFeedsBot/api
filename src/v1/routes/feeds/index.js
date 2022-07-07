@@ -71,7 +71,7 @@ module.exports = class Feeds extends Base {
     });
 
     // Calculate pages
-    const feedCount = (await req.app.locals.db.collection('feeds').find(query).toArray()).length;
+    const feedCount = await req.app.locals.db.collection('feeds').find(query).countDocuments();
     const pages = Math.floor(feedCount / 100) + 1;
 
     // Get data for that page
@@ -118,7 +118,7 @@ module.exports = class Feeds extends Base {
       }
     }
 
-    const feedCount = (await req.app.locals.db.collection('feeds').find({ guildID: req.params.guildID }).toArray()).length;
+    const feedCount = await req.app.locals.db.collection('feeds').find(query).countDocuments();
     const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
     const pages = Math.floor(feedCount / 50) + 1;
 
