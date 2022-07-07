@@ -118,10 +118,6 @@ module.exports = class Feeds extends Base {
       }
     }
 
-    const feedCount = await req.app.locals.db.collection('feeds').countDocuments(query);
-    const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
-    const pages = Math.floor(feedCount / 50) + 1;
-
     // Fix query
     const query = {};
     Object.keys(req.query).forEach(key => {
@@ -132,6 +128,10 @@ module.exports = class Feeds extends Base {
         query[key] = req.query[key];
       }
     });
+
+    const feedCount = await req.app.locals.db.collection('feeds').countDocuments(query);
+    const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
+    const pages = Math.floor(feedCount / 50) + 1;
 
     let feeds = await req.app.locals.db.collection('feeds')
       .find(Object.assign(query, { guildID: req.params.guildID }))
