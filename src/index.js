@@ -32,7 +32,7 @@ process.on('unhandledRejection', (err, p) => logger.error(`Unhandled rejection: 
 const v1 = require('./v1/');
 const v2 = require('./v2/');
 app.use('/v1', v1);
-v2(app);
+v2(logger, app);
 
 app.use((req, res, next) => {
   logger.debug(`${req.method.toUpperCase()} ${req.url}`);
