@@ -34,9 +34,9 @@ module.exports = class Users extends Base {
             return;
           }
         });
-      }
 
-      // TODO: send over new key!!!!
+        res.headers['Access-Token'] = refreshToken.access_token;
+      }
 
       user.admin = config.admins.includes(user.id) || undefined;
       res.status(200).json(user);

@@ -24,7 +24,17 @@ Data may be returned as empty arrays if there is an issue with the gateway.
 ## GET /v2/users/@me
 ### Get information about the current user.
 **`Requires user access token.`**
-`TO BE DOCUMENTATED`
+
+### Returns
+```ts
+{
+  id: string,
+  username: string,
+  discriminator: string,
+  avatar: string,
+  bot: boolean
+}
+```
 
 # Premium
 ---
