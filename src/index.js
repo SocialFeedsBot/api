@@ -18,7 +18,7 @@ const app = express();
 app.use(async (req, res, next) => {
   logger.debug(`${req.method.toUpperCase()} ${req.url}`);
   if (config.prometheus && config.prometheus.use) {
-    await superagent.post(`${config.prometheus.url}/counter/apiRequest`)
+    await superagent.post(`${config.prometheus.url}/request`)
       .send(req.url);
   }
   next();
