@@ -15,6 +15,13 @@ const bodyParser = require('body-parser');
 
 // Init
 const app = express();
+app.use(async (req, res, next) => {
+  logger.debug(`${req.method.toUpperCase()} ${req.url}`);
+  if (config.prometheus && config.prometheus.use) {
+    await superagent.post(`${config.prometheus.url}/counter/apiRequest/${req.url}`);
+  }
+  next();
+});
 app.use(bodyParser.json({
   verify: (req, res, buf, encoding) => {
     if (req.url.includes('webhook')) req.rawBody = buf;
@@ -33,11 +40,6 @@ const v1 = require('./v1/');
 const v2 = require('./v2/');
 app.use('/v1', v1);
 v2(app);
-
-app.use((req, res, next) => {
-  logger.debug(`${req.method.toUpperCase()} ${req.url}`);
-  next();
-});
 
 // Start
 async function start(gw) {
