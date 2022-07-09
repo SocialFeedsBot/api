@@ -3,7 +3,7 @@ const express = require('express');
 
 module.exports = class BaseRoute {
 
-  constructor(path, logger) {
+  constructor(path) {
     this.router = express.Router();
   }
 

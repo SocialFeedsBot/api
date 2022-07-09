@@ -5,6 +5,10 @@ module.exports = class PremiumCustomers extends Route {
 
   // GET /premium/customers (return a list of all customers)
   async get (req, res) {
+    if (!req.authInfo.admin) {
+      res.status(401).json({ error: 'You do not have access to this endpoint.' });
+      return;
+    }
     let customers = await req.app.locals.db.collection('premium').find(req.query.stripe ? { stripe: true } : undefined).toArray();
     res.status(200).json(customers.map(c => ({
       customerID: c.customerID,
@@ -18,6 +22,10 @@ module.exports = class PremiumCustomers extends Route {
 
   // POST /premium/customers (bulk update all customers)
   async put (req, res) {
+    if (!req.authInfo.admin) {
+      res.status(401).json({ error: 'You do not have access to this endpoint.' });
+      return;
+    }
     req.body.forEach(async (customer) => {
       const resp = await req.app.locals.db.collection('premium').updateOne(
         { customerID: { $eq: customer.customerID } },
