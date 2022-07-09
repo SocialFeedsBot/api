@@ -129,7 +129,7 @@ module.exports = class Feeds extends Base {
       }
     });
 
-    const feedCount = await req.app.locals.db.collection('feeds').countDocuments(query);
+    const feedCount = await req.app.locals.db.collection('feeds').countDocuments(Object.assign(query, { guildID: req.params.guildID }));
     const page = req.query.page ? parseInt(req.query.page) - 1 : 0;
     const pages = Math.floor(feedCount / 50) + 1;
 
