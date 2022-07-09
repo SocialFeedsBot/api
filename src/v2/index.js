@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-module.exports = (logger, app) => {
+module.exports = (app) => {
   const scan = (dir) => {
     const directory = fs.readdirSync(dir);
     directory.forEach((file) => {
@@ -13,9 +13,8 @@ module.exports = (logger, app) => {
           file = '';
         }
 
-        logger.debug('Filtered route', dir.replace(`${__dirname}/routes/`, ''));
         const Route = require(`${dir}/${file}`);
-        const route = new Route(`${dir}/${file}`, logger);
+        const route = new Route(`${dir}/${file}`);
 
         Object.getOwnPropertyNames(Route.prototype).filter(m => !m.includes('Middleware') && !m.includes('constructor')).forEach((routeName) => {
           const [method, ...path] = routeName.split(/(?=[A-Z])/);
