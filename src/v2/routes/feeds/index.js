@@ -1,5 +1,6 @@
 const Base = require('../../../structures/RouteV2');
 const constants = require('../../constants');
+const { auth } = require('../../middleware/auth');
 
 module.exports = class Feeds extends Base {
 
@@ -39,17 +40,15 @@ module.exports = class Feeds extends Base {
       webhookID: feed.webhook_id,
       webhookToken: feed.webhook_token,
       options: feed.options || {},
-      display: feed.display
+      display: feed.display || {}
     }));
 
     // Send off data
-    res.status(200).json({
-      feeds,
-      page: page + 1,
-      pages,
-      feedCount
-    });
+    res.status(200).json({ feeds, page: page + 1, pages, feedCount });
   }
+
+  // Middleware
+  getMiddleware (...args) { return auth(...args); }
 
 };
 
