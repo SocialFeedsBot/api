@@ -18,8 +18,7 @@ const app = express();
 app.use(async (req, res, next) => {
   logger.debug(`${req.method.toUpperCase()} ${req.url}`);
   if (config.prometheus && config.prometheus.use) {
-    await superagent.post(`${config.prometheus.url}/request`)
-      .set('Content-Type', 'text/plain')
+    await superagent.post(`${config.prometheus.url}/request?url=${encodeURIComponent(req.url)}`)
       .send(req.url);
   }
   next();
