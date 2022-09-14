@@ -2,7 +2,7 @@ const Base = require('../../../structures/RouteV2');
 const constants = require('../../constants');
 const { auth } = require('../../middleware/auth');
 
-module.exports = class Feeds extends Base {
+module.exports = class FeedInfo extends Base {
 
   // GET /feeds/ (returns a list of all the feeds)
   async get (req, res) {

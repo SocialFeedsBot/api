@@ -1,9 +1,9 @@
 // Constants
-const Base = require('../../../structures/RouteV2');
+const Base = require('../../../../structures/RouteV2');
 const jwt = require('jsonwebtoken');
-const config = require('../../../../config');
+const config = require('../../../../../config');
 
-const auth = require('../../middleware/auth');
+const auth = require('../../../middleware/auth');
 
 module.exports = class Users extends Base {
 

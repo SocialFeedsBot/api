@@ -31,7 +31,7 @@ module.exports = class PremiumCustomers extends Route {
         { customerID: { $eq: customer.customerID } },
         { $set: customer }, { upsert: true }
       );
-      console.log('[PREMIUM] Updating customer list, matched:', resp.matchedCount, ', modified:', resp.modifiedCount);
+      req.app.locals.logger.debug('Updating customer list', { src: 'premium', matched: resp.matchedCount, modified: resp.modifiedCount });
     });
     res.status(200).json({ success: true });
     return;

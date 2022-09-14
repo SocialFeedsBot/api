@@ -31,13 +31,13 @@ module.exports = class AuthMiddleware {
   static checkPermissions (_, res, guild) {
     // There is no guild?
     if (!guild) {
-      res.status(404).json({ error: 'Unknown guild' });
+      res.status(404).json({ error: 'Server is unknown' });
       return false;
     }
 
     // Check permissions
     if (!(((guild.permissions & 1) << 3) || ((guild.permissions & 1) << 5))) {
-      res.status(401).json({ error: 'Not logged in' });
+      res.status(401).json({ error: 'You are not logged in' });
       return false;
     }
 
@@ -73,10 +73,29 @@ module.exports = class AuthMiddleware {
   }
 
   // Get a new user token
-  static async refreshUser (req, id, token) {
-    const guilds = await req.app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${token}`);
-    req.app.locals.redis.set(`users:${id}`, JSON.stringify({ userID: id, guilds }), 'KEEPTTL');
+  static async refreshUser (app, id, token) {
+    const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${token}`);
+    app.locals.redis.set(`users:${id}`, JSON.stringify({ userID: id, guilds }), 'KEEPTTL');
     return guilds;
+  }
+
+  static async findGuild (app, data, id) {
+    let guild;
+    let userData = await app.locals.redis.get(`users:${data.userID}`);
+    if (!userData) {
+      const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${data.access_token}`);
+      let shared = await this.refreshUser(app, data.userID, guilds);
+      guild = guilds.filter(g => shared.includes(g.id)).filter(g => g.id === id)[0];
+    } else {
+      userData = JSON.parse(userData);
+      guild = userData.guilds.filter(g => g.id === id)[0];
+    }
+
+    if (!guild) {
+      return { code: 404, error: 'Unknown guild' };
+    }
+
+    return guild;
   }
 
 };
