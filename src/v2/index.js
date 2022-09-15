@@ -40,7 +40,7 @@ module.exports = (app) => {
           routeString = routeString.replace(new RegExp(key, 'g'), replace[key]);
         });
 
-        app.use(`/v2${dir.replace(`${__dirname}/routes/`, '')}`, route.router);
+        app.use(routeString, route.router);
       } else {
         scan(`${dir}/${file}`);
       }
