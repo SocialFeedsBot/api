@@ -66,6 +66,7 @@ async function start(gw) {
   app.locals.client = client;
   app.startedAt = Date.now();
   app.locals.redis = new Redis(config.redis);
+  app.locals.storedUsers = new Map();
 
   const { body } = await superagent.post('https://api.twitter.com/oauth2/token?grant_type=client_credentials')
     .set('Authorization', `Basic ${btoa(`${config.twitterConsumerKey}:${config.twitterConsumerSecret}`)}`);
