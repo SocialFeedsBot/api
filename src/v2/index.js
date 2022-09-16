@@ -20,27 +20,25 @@ module.exports = (app) => {
           const [method, ...path] = routeName.split(/(?=[A-Z])/);
           const middleware = route[`${path.length > 0 ? `${method}${path.join('')}` : method}Middleware`];
 
+          let routeString = `/v2${dir.replace(`${__dirname}/routes/`, '')}`;
+          Object.keys(replace).forEach(key => {
+            routeString = routeString.replace(new RegExp(key, 'g'), replace[key]);
+          });
+
           if (path.length === 0) {
             if (middleware) {
-              route.router[method]('/', middleware.bind(route), route[method].bind(route));
+              app[method](routeString, middleware.bind(route), route[method].bind(route));
             } else {
-              route.router[method]('/', route[method].bind(route));
+              app[method](routeString, route[method].bind(route));
             }
           } else if(path.length > 0) {
             if (middleware) {
-              route.router[method](`/${path.join('/').toLowerCase()}`, middleware.bind(route), route[`${method}${path.join()}`].bind(route));
+              app[method](`/${routeString}/${path.join('/').toLowerCase()}`, middleware.bind(route), route[`${method}${path.join()}`].bind(route));
             } else {
-              route.router[method](`/${path.join('/').toLowerCase()}`, route[`${method}${path.join('')}`].bind(route));
+              app[method](`/${routeString}/${path.join('/').toLowerCase()}`, route[`${method}${path.join('')}`].bind(route));
             }
           }
         });
-
-        let routeString = `/v2${dir.replace(`${__dirname}/routes/`, '')}`;
-        Object.keys(replace).forEach(key => {
-          routeString = routeString.replace(new RegExp(key, 'g'), replace[key]);
-        });
-
-        app.use(routeString, route.router);
       } else {
         scan(`${dir}/${file}`);
       }
