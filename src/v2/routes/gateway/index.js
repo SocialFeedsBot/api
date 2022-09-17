@@ -6,7 +6,7 @@ module.exports = class Status extends Base {
 
   // GET /gateway/auth (returns whether the user is authorised to use gateway functions)
   async getAuth (req, res) {
-    if (!req.authInfo.auth) {
+    if (!req.authInfo.isAuthorised) {
       res.status(200).json({ auth: false });
       return;
     }
@@ -19,7 +19,7 @@ module.exports = class Status extends Base {
 
   // POST /gateway/restart (restarts selected services)
   async postRestart (req, res) {
-    if (!req.authInfo.auth) {
+    if (!req.authInfo.isAuthorised) {
       res.status(500).json({ auth: false, error: 'Authentication error' });
       return;
     }
