@@ -79,12 +79,21 @@ module.exports = class AuthMiddleware {
     return guilds;
   }
 
+  static async findUser (app, id) {
+    let userData = await app.locals.redis.get(`users:${id}`);
+    if (!userData) {
+      return null;
+    } else {
+      return JSON.parse(userData);
+    }
+  }
+
   static async findGuild (app, data, id) {
     let guild;
     let userData = await app.locals.redis.get(`users:${data.userID}`);
     if (!userData) {
-      const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${data.access_token}`);
-      let shared = await this.refreshUser(app, data.userID, guilds);
+      const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${data.accessToken}`);
+      let shared = await AuthMiddleware.refreshUser(app, data.userID, data.accessToken);
       guild = guilds.filter(g => shared.includes(g.id)).filter(g => g.id === id)[0];
     } else {
       userData = JSON.parse(userData);
