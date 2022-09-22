@@ -56,7 +56,8 @@ module.exports = class Feeds extends Route {
         webhookID: feed.webhook_id,
         webhookToken: feed.webhook_token,
         options: feed.options || {},
-        display: feed.display || {}
+        display: feed.display || {},
+        enabled: feed.enabled || true
       };
     }).filter(a => a);
 
@@ -168,7 +169,8 @@ module.exports = class Feeds extends Route {
       type: document.type,
       url: document.url,
       guildID: document.guildID,
-      options: document.options || {}
+      options: document.options || {},
+      enabled: document.enabled || true
     };
 
     if (req.body.newURL) {

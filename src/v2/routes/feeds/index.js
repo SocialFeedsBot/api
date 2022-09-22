@@ -40,7 +40,8 @@ module.exports = class FeedInfo extends Base {
       webhookID: feed.webhook_id,
       webhookToken: feed.webhook_token,
       options: feed.options || {},
-      display: feed.display || {}
+      display: feed.display || {},
+      enabled: feed.enabled || true
     }));
 
     // Send off data
