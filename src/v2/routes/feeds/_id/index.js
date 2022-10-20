@@ -243,10 +243,16 @@ async function verifyFeed (req, res) {
             .set('User-Agent', 'SocialFeeds-API/1 (NodeJS)')
         ]);
 
+        if (!username && !id) {
+          req.app.locals.logger.error(`No data in username and id? ${username} ${id}`);
+          res.status(404).json({ success: false, error: 'An error occurred connecting to YouTube, please try again later.' });
+          return false;
+        }
+
         let user;
-        if (username.items && username.items[0]) {
+        if (username && username.items && username.items[0]) {
           user = username.items[0];
-        } else if (id.items && id.items[0]) {
+        } else if (id && id.items && id.items[0]) {
           user = id.items[0];
         }
         if (!user) {
