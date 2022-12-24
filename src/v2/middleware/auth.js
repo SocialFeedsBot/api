@@ -75,7 +75,7 @@ module.exports = class AuthMiddleware {
   // Get a new user token
   static async refreshUser (app, id, token) {
     const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${token}`);
-    app.locals.redis.set(`users:${id}`, JSON.stringify({ userID: id, guilds }), 'KEEPTTL');
+    await app.locals.redis.set(`users:${id}`, JSON.stringify({ userID: id, guilds }), 'EX', 60 * 5);
     return guilds;
   }
 

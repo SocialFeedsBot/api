@@ -1,46 +1,11 @@
-const Route = require('../../../structures/RouteV2');
-const auth = require('../../middleware/auth');
-const config = require('../../../../config');
+const Route = require('../../../../structures/RouteV2');
+const config = require('../../../../../config');
 const stripe = require('stripe')(config.stripeKey);
 
-module.exports = class PremiumCustomers extends Route {
+module.exports = class StripeWebhook extends Route {
 
-  // GET /premium/status (return the premium status of a customer)
-  async getStatus (req, res) {
-    if (!req.authInfo.admin) {
-      res.status(401).json({ error: 'You do not have access to this endpoint.' });
-      return;
-    }
-    const status = await req.app.locals.db.collection('premium').findOne({ discordID: req.query.id });
-    if (!status) {
-      res.status(200).json({ isPremium: false });
-    } else {
-      res.status(200).json({ isPremium: true, ...status });
-    }
-  }
-
-  // POST /premium/checkout (creates a new checkout and returns the checkout url)
-  async postCheckout (req, res) {
-    const session = await stripe.checkout.sessions.create({
-      success_url: 'https://socialfeeds.app/premium/success',
-      cancel_url: 'https://socialfeeds.app/premium/cancel',
-      line_items: [
-        { price: 'price_1KqIMfEGjzOLL8A44xY7FJuo', quantity: 1 }
-      ],
-      allow_promotion_codes: true,
-      mode: 'subscription',
-      metadata: {
-        userID: req.body.userID,
-        guildID: req.body.guildID
-      }
-    });
-
-    res.status(200).json({ url: session.url });
-    return;
-  }
-
-  // POST /premium/webhook (handles all webhooks from stripe)
-  async postWebhook (req, res) {
+  // POST /premium/webhook (handle stripe webhooks)
+  async post (req, res) {
     const sig = req.headers['stripe-signature'];
 
     let event;
@@ -61,6 +26,7 @@ module.exports = class PremiumCustomers extends Route {
             userID: object.metadata.userID,
             guildID: object.metadata.guildID,
             amountPaid: object.amount_total,
+            status: object.status,
             expires: 0
           },
           { $upsert: true }
@@ -74,7 +40,7 @@ module.exports = class PremiumCustomers extends Route {
           { $set: {
             expires: object.current_period_end,
             subscriptionStatus: object.status,
-            tier: config.stripeProducts.indexOf(object.plan.product) + 1
+            tier: config.premiumTiers.indexOf(config.premiumTiers.find(o => o.product === object.plan.product)) + 1
           } },
           { $upsert: true }
         );
@@ -87,7 +53,7 @@ module.exports = class PremiumCustomers extends Route {
           { $set: {
             expires: object.current_period_end,
             subscriptionStatus: object.status,
-            tier: config.stripeProducts.indexOf(object.plan.product) + 1
+            tier: config.premiumTiers.indexOf(config.premiumTiers.find(o => o.product === object.plan.product)) + 1
           } },
           { $upsert: true }
         );
@@ -103,8 +69,5 @@ module.exports = class PremiumCustomers extends Route {
 
     res.status(200).json({ success: true });
   }
-
-  // Middleware for all routes
-  getStatusMiddleware(...args) { return auth.auth(...args); }
 
 };

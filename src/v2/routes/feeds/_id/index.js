@@ -26,7 +26,6 @@ module.exports = class Feeds extends Route {
       .skip(page > 0 ? page * 50 : 0)
       .limit(50)
       .toArray();
-
     if (!feeds[0]) {
       res.status(200).json({ feeds: [], feedCount, page: page + 1, pages });
       return;
@@ -57,7 +56,7 @@ module.exports = class Feeds extends Route {
         webhookToken: feed.webhook_token,
         options: feed.options || {},
         display: feed.display || {},
-        enabled: feed.enabled || true
+        enabled: feed.enabled !== undefined ? feed.enabled : true
       };
     }).filter(a => a);
 
@@ -127,7 +126,7 @@ module.exports = class Feeds extends Route {
       webhook_id: webhook.id,
       webhook_token: webhook.token,
       type: req.body.type,
-      url: req.body.url,
+      url: req.body.url.toString(),
       guildID: req.params.id,
       options: req.body.options || {},
       display: feedData,
@@ -161,37 +160,42 @@ module.exports = class Feeds extends Route {
       return;
     }
 
-    let id = document._id;
-
-    document = {
+    let clone = {
       webhook_id: document.webhook_id,
       webhook_token: document.webhook_token,
       type: document.type,
       url: document.url,
       guildID: document.guildID,
       options: document.options || {},
-      enabled: document.enabled || true
+      enabled: document.enabled || true,
+      display: document.display || {}
     };
 
+    let feedDisplay;
     if (req.body.newURL) {
-      document.url = req.body.newURL;
+      req.body.url = req.body.newURL;
+      feedDisplay = await verifyFeed(req, res);
+      if (!feedDisplay) return;
+
+      clone.url = req.body.newURL;
       delete req.body.newURL;
     }
     Object.keys(req.body).forEach(key => {
       if (key === 'options') {
         Object.keys(req.body.options).forEach(option => {
-          document.options[option] = req.body.options[option];
+          clone.options[option] = req.body.options[option];
         });
       } else if (key === 'display') {
         Object.keys(req.body.display).forEach(option => {
-          document.display[option] = req.body.display[option];
+          clone.display[option] = req.body.display[option];
         });
-      } else {
-        document[key] = req.body[key];
+      } else if (!['webhookID', 'webhookToken', 'url'].includes(key)) {
+        clone[key] = req.body[key];
       }
     });
+    if (feedDisplay) clone.display = feedDisplay;
 
-    await req.app.locals.db.collection('feeds').updateOne({ _id: id }, { $set: document }, { $upsert: true });
+    await req.app.locals.db.collection('feeds').updateOne({ _id: document._id }, { $set: clone }, { $upsert: true });
     res.status(200).json({ success: true });
   }
 
@@ -282,7 +286,7 @@ async function verifyFeed (req, res) {
         });
         return user;
       } catch(err) {
-        res.status(400).json({ success: false, error: `An error occured (${err.toString()})` });
+        res.status(400).json({ success: false, error: 'No Twitter account found with that username.' });
         return false;
       }
     }
