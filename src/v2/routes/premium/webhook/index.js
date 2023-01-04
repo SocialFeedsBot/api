@@ -31,6 +31,7 @@ module.exports = class StripeWebhook extends Route {
           },
           { $upsert: true }
         );
+        req.app.locals.redis.hsetnx('states:premium:guilds', object.metadata.guildID, '');
         break;
       }
 
@@ -44,6 +45,7 @@ module.exports = class StripeWebhook extends Route {
           } },
           { $upsert: true }
         );
+        req.app.locals.redis.hsetnx('states:premium:guilds', object.metadata.guildID, '');
         break;
       }
 
@@ -57,11 +59,13 @@ module.exports = class StripeWebhook extends Route {
           } },
           { $upsert: true }
         );
+        req.app.locals.redis.hsetnx('states:premium:guilds', object.metadata.guildID, '');
         break;
       }
 
       case 'customer.subscription.deleted': {
         await req.app.locals.db.collection('premium').deleteOne({ _id: event.data.object.customer });
+        req.app.locals.redis.hdel('states:premium:guilds', object.metadata.guildID);
         break;
       }
     }
