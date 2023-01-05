@@ -21,7 +21,7 @@ module.exports = class StripeWebhook extends Route {
 
     switch (event.type) {
       case 'checkout.session.completed': {
-        await req.app.locals.db.collection('premium').insertOne(
+        await req.app.locals.db.collection('premium').updateOne(
           { _id: object.customer,
             userID: object.metadata.userID,
             guildID: object.metadata.guildID,
@@ -40,7 +40,7 @@ module.exports = class StripeWebhook extends Route {
           { _id: object.customer },
           { $set: {
             expires: object.current_period_end,
-            subscriptionStatus: object.status,
+            status: object.status,
             tier: config.premiumTiers.indexOf(config.premiumTiers.find(o => o.product === object.plan.product)) + 1
           } },
           { $upsert: true }
@@ -54,7 +54,7 @@ module.exports = class StripeWebhook extends Route {
           { _id: object.customer },
           { $set: {
             expires: object.current_period_end,
-            subscriptionStatus: object.status,
+            status: object.status,
             tier: config.premiumTiers.indexOf(config.premiumTiers.find(o => o.product === object.plan.product)) + 1
           } },
           { $upsert: true }
