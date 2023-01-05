@@ -109,6 +109,16 @@ module.exports = class Feeds extends Route {
       });
     }
 
+    const isPremium = await req.app.locals.db.collection('premium').findOne({ guildID: guild.id });
+    const currentFeedCount = await req.app.locals.db.collection('feeds').countDocuments({ guildID: guild.id });
+    if (isPremium) {
+      let details = config.premiumTiers[isPremium.tier - 1];
+      if (details.maxFeeds >= currentFeedCount.length) {
+        res.status(403).json({ success: false, error: `You have reached your maximum feed count (${currentFeedCount.length}/${details.maxFeeds})` });
+        return;
+      }
+    }
+
     let posted = await req.app.locals.db.collection('feeds').find({
       type: req.body.type,
       url: req.body.url,
