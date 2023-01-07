@@ -12,6 +12,13 @@ const btoa = require('btoa');
 const cors = require('cors');
 const config = require('../config');
 const bodyParser = require('body-parser');
+const sentry = require('@sentry/node');
+
+if (config.sentry) {
+  sentry.init({
+    dsn: config.sentry
+  });
+}
 
 // Set up logger
 const logger = winston.createLogger({

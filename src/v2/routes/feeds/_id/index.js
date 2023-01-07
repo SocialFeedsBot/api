@@ -40,11 +40,9 @@ module.exports = class Feeds extends Route {
     }
 
     // Find old webhooks
-    let oldWebhooks = [];
     feeds = feeds.map(feed => {
       let webhook = webhooks.find(w => w.id === feed.webhook_id);
       if (!webhook) {
-        oldWebhooks.push(feed.webhook_id);
         return null;
       }
 
@@ -59,15 +57,6 @@ module.exports = class Feeds extends Route {
         enabled: feed.enabled !== undefined ? feed.enabled : true
       };
     }).filter(a => a);
-
-    // Remove feeds under the broken webhooks
-    oldWebhooks.forEach(async (webhookID) => {
-      const inHooker = await req.app.locals.db.collection('feeds').find({ webhookID }).toArray();
-      req.app.locals.logger.warn(`Removing ${inHooker.length} feeds from deleted webhook!`, { src: 'getGuildFeeds' });
-      inHooker.forEach(async f => {
-        await req.app.locals.db.collection('feeds').deleteOne({ _id: f._id });
-      });
-    });
 
     res.status(200).json({ feeds, feedCount, page: page + 1, pages });
   }
@@ -109,8 +98,8 @@ module.exports = class Feeds extends Route {
       });
     }
 
-    const isPremium = await req.app.locals.db.collection('premium').findOne({ guildID: guild.id });
-    const currentFeedCount = await req.app.locals.db.collection('feeds').countDocuments({ guildID: guild.id });
+    const isPremium = await req.app.locals.db.collection('premium').findOne({ guildID: req.params.id });
+    const currentFeedCount = await req.app.locals.db.collection('feeds').countDocuments({ guildID: req.params.id });
     if (isPremium) {
       let details = config.premiumTiers[isPremium.tier - 1];
       if (details.maxFeeds >= currentFeedCount.length) {
