@@ -22,13 +22,14 @@ module.exports = class StripeWebhook extends Route {
     switch (event.type) {
       case 'checkout.session.completed': {
         await req.app.locals.db.collection('premium').updateOne(
-          { _id: object.customer,
+          { _id: object.customer },
+          { $set: {
             userID: object.metadata.userID,
             guildID: object.metadata.guildID,
             amountPaid: object.amount_total,
             status: object.status,
             expires: 0
-          },
+          } },
           { $upsert: true }
         );
         req.app.locals.redis.hsetnx('states:premium:guilds', object.metadata.guildID, '');
