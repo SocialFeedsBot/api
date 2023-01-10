@@ -8,9 +8,8 @@ module.exports = class GuildChannels extends Base {
     let guild;
     let userData = await req.app.locals.redis.get(`users:${req.authInfo.userID}`);
     if (!userData) {
-      const guilds = await req.app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${req.authInfo.accessToken}`);
-      let shared = await refreshUser(req.app, req.authInfo.userID, req.authInfo.accessToken);
-      guild = guilds.filter(g => shared.includes(g.id)).filter(g => g.id === req.params.id)[0];
+      const guilds = await refreshUser(req.app, req.authInfo.userID, req.authInfo.accessToken);
+      guild = guilds.filter(g => g.id === req.params.id)[0];
     } else {
       userData = JSON.parse(userData);
       guild = userData.guilds.filter(g => g.id === req.params.id)[0];

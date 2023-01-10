@@ -12,7 +12,7 @@ module.exports = class AuthMiddleware {
     // Try and authorise
     try {
       const data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
-      authInfo = { userID: data.useriD, isBot: !!data.bot, accessToken: data.access_token, isAuthorised: true };
+      authInfo = { userID: data.userID, isBot: !!data.bot, accessToken: data.access_token, isAuthorised: true };
     } catch(e) {
       res.status(401).json({ success: false, error: 'Not logged in' });
       authInfo.isAuthorised = false;
@@ -75,7 +75,9 @@ module.exports = class AuthMiddleware {
   // Get a new user token
   static async refreshUser (app, id, token) {
     const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${token}`);
-    await app.locals.redis.set(`users:${id}`, JSON.stringify({ userID: id, guilds }), 'EX', 60 * 5);
+    let shared = (await app.locals.gw.requestSharedGuilds(guilds.map(g => g.id))).flat();
+
+    await app.locals.redis.set(`users:${id}`, JSON.stringify({ userID: id, guilds: guilds.filter(g => shared.includes(g.id)) }), 'EX', 60 * 5);
     return guilds;
   }
 
@@ -92,9 +94,8 @@ module.exports = class AuthMiddleware {
     let guild;
     let userData = await app.locals.redis.get(`users:${data.userID}`);
     if (!userData) {
-      const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${data.accessToken}`);
-      let shared = await AuthMiddleware.refreshUser(app, data.userID, data.accessToken);
-      guild = guilds.filter(g => shared.includes(g.id)).filter(g => g.id === id)[0];
+      let guilds = await AuthMiddleware.refreshUser(app, data.userID, data.accessToken);
+      guild = guilds.filter(g => g.id === id)[0];
     } else {
       userData = JSON.parse(userData);
       guild = userData.guilds.filter(g => g.id === id)[0];

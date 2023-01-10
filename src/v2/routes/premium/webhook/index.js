@@ -37,13 +37,15 @@ module.exports = class StripeWebhook extends Route {
       }
 
       case 'customer.subscription.created': {
+        const data = await req.app.locals.db.collection('premium').findOne({ _id: object.customer });
+        delete data._id;
         await req.app.locals.db.collection('premium').updateOne(
           { _id: object.customer },
-          { $set: {
+          { $set: Object.assign(data, {
             expires: object.current_period_end,
             status: object.status,
             tier: config.premiumTiers.indexOf(config.premiumTiers.find(o => o.product === object.plan.product)) + 1
-          } },
+          }) },
           { $upsert: true }
         );
         req.app.locals.redis.hsetnx('states:premium:guilds', object.metadata.guildID, '');
@@ -51,13 +53,15 @@ module.exports = class StripeWebhook extends Route {
       }
 
       case 'customer.subscription.updated': {
+        const data = await req.app.locals.db.collection('premium').findOne({ _id: object.customer });
+        delete data._id;
         await req.app.locals.db.collection('premium').updateOne(
           { _id: object.customer },
-          { $set: {
+          { $set: Object.assign(data, {
             expires: object.current_period_end,
             status: object.status,
             tier: config.premiumTiers.indexOf(config.premiumTiers.find(o => o.product === object.plan.product)) + 1
-          } },
+          }) },
           { $upsert: true }
         );
         req.app.locals.redis.hsetnx('states:premium:guilds', object.metadata.guildID, '');

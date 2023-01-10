@@ -214,7 +214,7 @@ module.exports = class Feeds extends Route {
     }
 
     let document = await req.app.locals.db.collection('feeds').find({ webhook_id: req.body.webhookID }).toArray();
-    document = document.filter(f => f.url.toString().toLowerCase() === req.body.url.toLowerCase() &&
+    document = document.filter(f => f.url.toString().toLowerCase() === req.body.url.toString().toLowerCase() &&
       f.type.toLowerCase() === req.body.type.toLowerCase())[0];
     if (!document) {
       res.status(404).json({ success: false, error: 'Feed is non existent' });
@@ -240,10 +240,12 @@ async function verifyFeed (req, res) {
     case 'youtube': {
       try {
         const [{ body: username }, { body: { id } }] = await Promise.all([
-          superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername=${encodeURIComponent(req.body.url)}&key=${config.youtubeKey}`)
-            .set('User-Agent', 'SocialFeeds-API/1 (NodeJS)'),
-          superagent.get(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${req.body.url}&key=${config.youtubeKey}`)
-            .set('User-Agent', 'SocialFeeds-API/1 (NodeJS)')
+          superagent.get('https://www.googleapis.com/youtube/v3/channels')
+            .query({ forUsername: req.body.url, key: config.youtubeKey, part: 'snippet' })
+            .set('User-Agent', 'SocialFeeds-API/2 (NodeJS)'),
+          superagent.get('https://www.googleapis.com/youtube/v3/channels')
+            .query({ id: req.body.url, key: config.youtubeKey, part: 'snippet' })
+            .set('User-Agent', 'SocialFeeds-API/2 (NodeJS)')
         ]);
 
         let user;
