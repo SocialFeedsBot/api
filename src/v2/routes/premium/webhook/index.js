@@ -28,7 +28,7 @@ module.exports = class StripeWebhook extends Route {
             guildID: object.metadata.guildID,
             amountPaid: object.amount_total,
             status: object.status,
-            expires: 0
+            expires: object.expires_at
           } },
           { $upsert: true }
         );
@@ -37,17 +37,13 @@ module.exports = class StripeWebhook extends Route {
       }
 
       case 'customer.subscription.created': {
-        const data = await req.app.locals.db.collection('premium').findOne({ _id: object.customer });
-        delete data._id;
-        await req.app.locals.db.collection('premium').updateOne(
-          { _id: object.customer },
-          { $set: Object.assign(data, {
+        await req.app.locals.db.collection('premium').insertOne(
+          { _id: object.customer,
             expires: object.current_period_end,
             status: object.status,
-            tier: config.premiumTiers.indexOf(config.premiumTiers.find(o => o.product === object.plan.product)) + 1
-          }) },
-          { $upsert: true }
-        );
+            tier: config.premiumTiers.indexOf(config.premiumTiers.find(o => o.product === object.plan.product)) + 1,
+            amountPaid: object.amount_total
+          });
         req.app.locals.redis.hsetnx('states:premium:guilds', object.metadata.guildID, '');
         break;
       }
