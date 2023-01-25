@@ -88,7 +88,11 @@ module.exports = class PremiumCustomers extends Route {
 
   // POST /premium/checkout (creates a new checkout and returns the checkout url)
   async post (req, res) {
-    const tier = config.premiumTiers[req.body.tier - 1];
+    let tier = req.body.tier;
+    if (req.body.period === 'year') {
+      tier = req.body.tier + 4;
+    }
+    tier = config.premiumTiers[req.body.tier - 1];
     if (!tier) {
       res.status(500).json({ error: `Invalid premium tier (valid: 1-${config.premiumTiers.length})` });
       return;
