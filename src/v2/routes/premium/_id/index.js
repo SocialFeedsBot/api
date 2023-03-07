@@ -1,5 +1,5 @@
 const Route = require('../../../../structures/RouteV2');
-const auth = require('../../../middleware/auth');
+const { auth } = require('../../../middleware/auth');
 const config = require('../../../../../config');
 
 module.exports = class Status extends Route {
@@ -27,6 +27,6 @@ module.exports = class Status extends Route {
   }
 
   // Middlewares
-  getMiddleware(...args) { return auth.auth(...args); }
+  getMiddleware(...args) { return auth(...args); }
 
 };

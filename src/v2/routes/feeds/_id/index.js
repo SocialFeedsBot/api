@@ -1,5 +1,5 @@
 const Route = require('../../../../structures/RouteV2');
-const { auth, checkPermissions, refreshUser } = require('../../../middleware/auth');
+const { auth, checkPermissions, updateUser } = require('../../../middleware/auth');
 const superagent = require('superagent');
 const config = require('../../../../../config');
 
@@ -67,12 +67,13 @@ module.exports = class Feeds extends Route {
 
     let guild;
     if (!req.authInfo.isBot) {
-      let member = req.app.locals.storedUsers.get(req.authInfo.userID);
+      let member = await updateUser(req.app, req.authInfo.userID);
       if (!member) {
-        member = await refreshUser(req.app, req.authInfo.userID, req.authInfo.accessToken);
+        res.status(401).json({ success: false, error: 'Not logged in or token expired, login again' });
+        return;
       }
 
-      guild = member.filter(({ id }) => id === req.params.id)[0];
+      guild = member.guilds.filter(({ id }) => id === req.params.id)[0];
       const hasPerms = checkPermissions(req, res, guild);
       if (!hasPerms) return;
     }
@@ -138,13 +139,14 @@ module.exports = class Feeds extends Route {
   async patch (req, res) {
     let guild;
     if (!req.authInfo.isBot && !req.authInfo.admin) {
-      let member = req.app.locals.storedUsers.get(req.authInfo.userID);
+      let member = await updateUser(req.app, req.authInfo.userID);
       if (!member) {
-        member = await refreshUser(req.app, req.authInfo.userID, req.authInfo.accessToken);
+        res.status(401).json({ success: false, error: 'Not logged in or token expired, login again' });
+        return;
       }
 
       if (!req.authInfo.isBot) {
-        guild = member.filter(({ id }) => id === req.params.id)[0];
+        guild = member.guilds.filter(({ id }) => id === req.params.id)[0];
         const hasPerms = checkPermissions(req, res, guild);
         if (!hasPerms) return;
       }
@@ -201,13 +203,14 @@ module.exports = class Feeds extends Route {
   async delete (req, res) {
     let guild;
     if (!req.authInfo.isBot && !req.authInfo.admin) {
-      let member = req.app.locals.storedUsers.get(req.authInfo.userID);
+      let member = await updateUser(req.app, req.authInfo.userID);
       if (!member) {
-        member = await refreshUser(req.app, req.authInfo.userID, req.authInfo.accessToken);
+        res.status(401).json({ success: false, error: 'Not logged in or token expired, login again' });
+        return;
       }
 
       if (!req.authInfo.isBot) {
-        guild = member.filter(({ id }) => id === req.params.id)[0];
+        guild = member.guilds.filter(({ id }) => id === req.params.id)[0];
         const hasPerms = checkPermissions(req, res, guild);
         if (!hasPerms) return;
       }

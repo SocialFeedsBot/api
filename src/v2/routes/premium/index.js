@@ -1,6 +1,6 @@
 const Route = require('../../../structures/RouteV2');
 const config = require('../../../../config');
-const auth = require('../../middleware/auth');
+const { auth } = require('../../middleware/auth');
 
 module.exports = class Premium extends Route {
 
@@ -25,6 +25,6 @@ module.exports = class Premium extends Route {
   }
 
   // Middlewares
-  postMiddleware(...args) { return auth.auth(...args); }
+  postMiddleware(...args) { return auth(...args); }
 
 };

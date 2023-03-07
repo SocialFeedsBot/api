@@ -6,13 +6,15 @@ const config = require('../../../config');
 module.exports = class AuthMiddleware {
 
   // Main authorisation function, determines various info to pass
-  static auth (req, res, next) {
+  static async auth (req, res, next) {
     let authInfo = { userID: '', isBot: false, isAuthorised: false, acessToken: '' };
 
     // Try and authorise
     try {
       const data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
-      authInfo = { userID: data.userID, isBot: !!data.bot, accessToken: data.access_token, isAuthorised: true };
+      const token = JSON.parse(await req.app.locals.redis.get(`api:tokens:${data.userID}`));
+
+      authInfo = { userID: data.userID, isBot: !!data.bot, accessToken: token?.access_token, isAuthorised: true };
     } catch(e) {
       res.status(401).json({ success: false, error: 'Not logged in' });
       authInfo.isAuthorised = false;
@@ -44,57 +46,66 @@ module.exports = class AuthMiddleware {
     return true;
   }
 
-  // Get acccess token from code
-  static async getAccessToken (code) {
-    let body;
-    try {
-      body = (await superagent.post('https://discord.com/api/oauth2/token')
+  // Get user data and cache their data
+  static async updateUser (app, userID) {
+    // Refresh token if expired
+    let token = JSON.parse(await app.locals.redis.get(`api:tokens:${userID}`));
+    if (!token) {
+      const refreshToken = await app.locals.redis.get(`api:refresh_tokens:${userID}`);
+      if (!refreshToken) {
+        return null;
+      }
+      token = (await superagent.post('https://discord.com/api/oauth2/token')
         .set('Content-Type', 'application/x-www-form-urlencoded')
-        .set('Authorization', `Basic ${Buffer.from(`${config.clientID}:${config.clientSecret}`).toString('base64')}`)
         .send({
-          code: code,
-          grant_type: 'authorization_code',
-          redirect_uri: `${config.url}/callback`,
-          scope: 'identify guilds'
+          client_id: config.clientID,
+          client_secret: config.clientSecret,
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken
         })).body;
+      console.log('REFRESHED', token);
+      await app.locals.redis.set(`api:refresh_tokens:${userID}`, token.refresh_token);
+    }
 
-      return body;
+    // Find cached user and return it
+    const cachedUser = JSON.parse(await app.locals.redis.get(`api:users:${userID}`));
+    console.log('CACHED USER');
+    if (cachedUser) {
+      return cachedUser;
+    }
+
+    // Get new user data
+    const user = await app.locals.discordRest.api.users('@me').get(null, null, `Bearer ${token.access_token}`);
+    console.log('GOT USER');
+    const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${token.access_token}`);
+    console.log('GOT GUILDS');
+
+    // Cache user
+    await app.locals.redis.set(`api:users:${user.id}`, JSON.stringify({ user, guilds }), 'EX', 60 * 5);
+
+    // Sign new JWT secret
+    try {
+      jwt.sign({ userID: user.id }, config.jwtSecret, { expiresIn: token.expires_in }, null);
+      return { user, guilds };
+    } catch (e) {
+      return { user, guilds };
+    }
+  }
+
+  // Decode a JWT token
+  static decodeJWT (code) {
+    try {
+      return jwt.verify(code, config.jwtSecret, null);
     } catch (e) {
       return null;
     }
   }
 
-  static async refreshAccessToken (refresh) {
-    const { body: refreshToken } = await superagent.post('https://discord.com/api/v8/oauth2/token')
-      .set('Authorization', `Basic ${Buffer.from(`${config.clientID}:${config.clientSecret}`).toString('base64')}`)
-      .send({ grant_type: 'refresh_token', refresh_token: refresh });
-
-    return refreshToken;
-  }
-
-  // Get a new user token
-  static async refreshUser (app, id, token) {
-    const guilds = await app.locals.discordRest.api.users('@me').guilds.get(null, null, `Bearer ${token}`);
-    let shared = (await app.locals.gw.requestSharedGuilds(guilds.map(g => g.id))).flat();
-
-    await app.locals.redis.set(`users:${id}`, JSON.stringify({ userID: id, guilds: guilds.filter(g => shared.includes(g.id)) }), 'EX', 60 * 5);
-    return guilds;
-  }
-
-  static async findUser (app, id) {
-    let userData = await app.locals.redis.get(`users:${id}`);
-    if (!userData) {
-      return null;
-    } else {
-      return JSON.parse(userData);
-    }
-  }
-
   static async findGuild (app, data, id) {
     let guild;
-    let userData = await app.locals.redis.get(`users:${data.userID}`);
+    let userData = await app.locals.redis.get(`api:users:${data.userID}`);
     if (!userData) {
-      let guilds = await AuthMiddleware.refreshUser(app, data.userID, data.accessToken);
+      let { guilds } = await AuthMiddleware.updateUser(app, data.userID);
       guild = guilds.filter(g => g.id === id)[0];
     } else {
       userData = JSON.parse(userData);

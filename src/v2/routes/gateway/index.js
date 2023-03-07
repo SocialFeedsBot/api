@@ -2,7 +2,7 @@ const Base = require('../../../structures/RouteV2');
 const { auth } = require('../../middleware/auth');
 const config = require('../../../../config');
 
-module.exports = class Status extends Base {
+module.exports = class Gateway extends Base {
 
   // GET /gateway/auth (returns whether the user is authorised to use gateway functions)
   async getAuth (req, res) {
