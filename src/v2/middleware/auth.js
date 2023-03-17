@@ -12,7 +12,10 @@ module.exports = class AuthMiddleware {
     // Try and authorise
     try {
       const data = jwt.verify(req.headers.authorization, config.jwtSecret, { algorithm: 'HS256' });
-      const token = JSON.parse(await req.app.locals.redis.get(`api:tokens:${data.userID}`));
+      let token;
+      if (data.bot === true) {
+        token = JSON.parse(await req.app.locals.redis.get(`api:tokens:${data.userID}`));
+      }
 
       authInfo = { userID: data.userID, isBot: !!data.bot, accessToken: token?.access_token, isAuthorised: true };
     } catch(e) {

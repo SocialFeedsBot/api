@@ -9,7 +9,6 @@ const Twitter = require('twitter');
 const express = require('express');
 const superagent = require('superagent');
 const btoa = require('btoa');
-const cors = require('cors');
 const config = require('../config');
 const bodyParser = require('body-parser');
 const sentry = require('@sentry/node');
@@ -45,19 +44,11 @@ app.use(bodyParser.json({
     if (req.url.includes('webhook')) req.rawBody = buf;
   }
 }));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cors());
-app.use((req, res, next) => {
-  logger.debug(`${req.method} ${req.url}`, { src: 'api' });
-  next();
-});
 
 process.on('unhandledRejection', (err, p) => logger.error(`Unhandled rejection: ${err.stack}`, { promise: p }));
 
 // Versions
-const v1 = require('./v1/');
 const v2 = require('./v2/');
-app.use('/v1', v1);
 v2(app);
 
 // Start

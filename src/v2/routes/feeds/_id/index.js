@@ -85,7 +85,7 @@ module.exports = class Feeds extends Route {
       if (e.message.includes('Maximum number of webhooks reached')) {
         res.status(403).json({ success: false, error: 'Maximum number of webhooks reached for this channel.' });
       } else if (e.message.includes('Missing Permissions')) {
-        res.status(403).json({ success: false, error: 'I do not have permissions to create webhooks.' });
+        res.status(403).json({ success: false, error: 'I do not have permissions to view or create webhooks.' });
       } else {
         res.status(403).json({ success: false, error: `Unknown error: \`${e.message}\`` });
       }
@@ -397,7 +397,13 @@ async function verifyFeed (req, res) {
 }
 
 async function createWebhook (client, channelID) {
-  const webhooks = await client.getChannelWebhooks(channelID);
+  let webhooks;
+  try {
+    webhooks = await client.getChannelWebhooks(channelID);
+  } catch (e) {
+    throw new Error('Missing Permissions');
+  }
+
   if (webhooks.length) {
     const webhook = webhooks.find(hook => hook.user.id === config.clientID);
     if (webhook) return webhook;

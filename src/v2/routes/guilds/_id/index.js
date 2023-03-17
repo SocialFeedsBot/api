@@ -28,6 +28,11 @@ module.exports = class Feeds extends Base {
         user: isPremium.userID,
         maxFeeds: details.maxFeeds
       };
+    } else {
+      guild.premium = {
+        status: false,
+        maxFeeds: 30
+      };
     }
 
     res.status(200).json(guild);
