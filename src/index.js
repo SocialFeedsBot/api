@@ -9,6 +9,7 @@ const Twitter = require('twitter');
 const express = require('express');
 const superagent = require('superagent');
 const btoa = require('btoa');
+const cors = require('cors');
 const config = require('../config');
 const bodyParser = require('body-parser');
 const sentry = require('@sentry/node');
@@ -44,6 +45,7 @@ app.use(bodyParser.json({
     if (req.url.includes('webhook')) req.rawBody = buf;
   }
 }));
+app.use(cors());
 
 process.on('unhandledRejection', (err, p) => logger.error(`Unhandled rejection: ${err.stack}`, { promise: p }));
 
