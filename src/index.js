@@ -1,4 +1,5 @@
 // Constants
+const isProduction = !process.env.DEV;
 const Eris = require('eris');
 const Redis = require('ioredis');
 const Rest = require('./discord/RequestHandler');
@@ -8,7 +9,7 @@ const winston = require('winston');
 const express = require('express');
 const superagent = require('superagent');
 const cors = require('cors');
-const config = require('../config');
+const config = require(isProduction ? '../config' : '../config.dev');
 const bodyParser = require('body-parser');
 const sentry = require('@sentry/node');
 
@@ -88,6 +89,7 @@ async function setTwitchToken() {
   setTimeout(() => setTwitchToken(), twitch.expires_in);
 }
 
+logger.info(`Running in ${isProduction ? 'production' : 'development'} environment`, { src: 'process' });
 const worker = new GatewayClient(config.gateway.use, 'api', config.gateway.address, config.gateway.secret);
 
 worker
