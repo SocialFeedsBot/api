@@ -277,22 +277,17 @@ async function verifyFeed (req, res) {
     // TWITTER
     case 'twitter': {
       try {
-        const user = await new Promise((resolve, reject) => {
-          req.app.locals.twitterClient.get('users/lookup', { screen_name: req.body.url }, (error, users) => {
-            if (error) return reject(error);
-            if (!users[0]) return reject('Unknown user');
-
-            return resolve({
-              title: users[0].name,
-              icon: users[0].profile_image_url_https
-            });
-          });
-        });
-        return user;
+        const user = await superagent.get(`https://nitter.net/${req.body.url}`);
+        if (user && user.statusCode !== 404) {
+          return {
+            title: `@${req.body.url}`
+          };
+        }
       } catch(err) {
         res.status(400).json({ success: false, error: 'No Twitter account found with that username.' });
         return false;
       }
+      break;
     }
 
     // TWITCH

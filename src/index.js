@@ -5,10 +5,8 @@ const Rest = require('./discord/RequestHandler');
 const { MongoClient } = require('mongodb');
 const GatewayClient = require('./gateway');
 const winston = require('winston');
-const Twitter = require('twitter');
 const express = require('express');
 const superagent = require('superagent');
-const btoa = require('btoa');
 const cors = require('cors');
 const config = require('../config');
 const bodyParser = require('body-parser');
@@ -67,14 +65,6 @@ async function start(gw) {
   app.startedAt = Date.now();
   app.locals.redis = new Redis(config.redis);
   app.locals.storedUsers = new Map();
-
-  const { body } = await superagent.post('https://api.twitter.com/oauth2/token?grant_type=client_credentials')
-    .set('Authorization', `Basic ${btoa(`${config.twitterConsumerKey}:${config.twitterConsumerSecret}`)}`);
-  app.locals.twitterClient = new Twitter({
-    consumer_key: config.twitterConsumerKey,
-    consumer_secret: config.twitterConsumerSecret,
-    bearer_token: body.access_token
-  });
 
   setTwitchToken();
 
