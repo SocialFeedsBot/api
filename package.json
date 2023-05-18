@@ -25,7 +25,7 @@
     "eris": "^0.15.0",
     "express": "^4.17.1",
     "ioredis": "^4.27.6",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "mongodb": "^4.2.1",
     "stripe": "^8.218.0",
     "superagent": "^6.1.0",
