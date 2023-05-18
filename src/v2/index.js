@@ -1,21 +1,44 @@
 const fs = require('fs');
 
+const replace = {
+  _id: ':id([0-9]+)'
+};
+
 module.exports = (app) => {
   const scan = (dir) => {
-    fs.readdirSync(dir).forEach((file) => {
+    const directory = fs.readdirSync(dir);
+    directory.forEach((file) => {
       if (file.endsWith('.js')) {
-        let route = `${dir}/${file}`.split('/');
-        route.splice(0, route.indexOf('routes') + 1);
-
-        if (route[route.length - 1] === 'index.js') {
-          route.splice(-1);
-        } else {
-          route[route.length - 1] = route[route.length - 1].slice(0, -3);
+        if (file === 'index.js') {
+          file = '';
         }
 
-        route = route.map(name => name.replace(/^_/, ':')).join('/');
+        const Route = require(`${dir}/${file}`);
+        const route = new Route(`${dir}/${file}`);
 
-        const methods = require(`${dir}/${file}`);
+        Object.getOwnPropertyNames(Route.prototype).filter(m => !m.includes('Middleware') && !m.includes('constructor')).forEach((routeName) => {
+          const [method, ...path] = routeName.split(/(?=[A-Z])/);
+          const middleware = route[`${path.length > 0 ? `${method}${path.join('')}` : method}Middleware`];
+
+          let routeString = `/v2${dir.replace(`${__dirname}/routes/`, '')}`;
+          Object.keys(replace).forEach(key => {
+            routeString = routeString.replace(new RegExp(key, 'g'), replace[key]);
+          });
+
+          if (path.length === 0) {
+            if (middleware) {
+              app[method](routeString, middleware.bind(route), route[method].bind(route));
+            } else {
+              app[method](routeString, route[method].bind(route));
+            }
+          } else if(path.length > 0) {
+            if (middleware) {
+              app[method](`/${routeString}/${path.join('/').toLowerCase()}`, middleware.bind(route), route[`${method}${path.join()}`].bind(route));
+            } else {
+              app[method](`/${routeString}/${path.join('/').toLowerCase()}`, route[`${method}${path.join('')}`].bind(route));
+            }
+          }
+        });
       } else {
         scan(`${dir}/${file}`);
       }
@@ -24,25 +47,3 @@ module.exports = (app) => {
 
   scan(`${__dirname}/routes/`);
 };
-
-/*
-
-routes/
-  feeds/
-    :id/
-      index.js
-  index.js
-
-  guilds/
-    @me/
-      index.js
-    :id/
-      index.js
-
-  users/
-    @me/
-      index.js
-    :id/
-      index.js
-
-*/
