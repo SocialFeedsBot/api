@@ -284,8 +284,7 @@ async function verifyFeed (req, res) {
           };
         }
       } catch(err) {
-        res.status(400).json({ success: false, error: 'No Twitter account found with that username.' });
-        return false;
+        res.status(404).json({ success: false, error: 'No Twitter account found with that username.' });
       }
       break;
     }
