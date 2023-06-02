@@ -277,7 +277,7 @@ async function verifyFeed (req, res) {
     // TWITTER
     case 'twitter': {
       try {
-        const user = await superagent.get(`https://nitter.net/${req.body.url}`);
+        const user = await superagent.get(`https://nitter.net/${req.body.url}`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
         if (user && user.statusCode !== 404) {
           return {
             title: `@${req.body.url}`
