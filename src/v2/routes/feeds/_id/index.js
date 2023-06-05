@@ -277,16 +277,18 @@ async function verifyFeed (req, res) {
     // TWITTER
     case 'twitter': {
       try {
-        const user = await superagent.get(`https://nitter.net/${req.body.url}`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
+        const user = await superagent.get(`https://nitter.it/${req.body.url}`).set('User-Agent', 'SocialFeeds-API/1 (NodeJS)');
         if (user && user.statusCode !== 404) {
           return {
             title: `@${req.body.url}`
           };
+        } else {
+          return false;
         }
       } catch(err) {
         res.status(404).json({ success: false, error: 'No Twitter account found with that username.' });
+        return false;
       }
-      break;
     }
 
     // TWITCH
@@ -298,6 +300,7 @@ async function verifyFeed (req, res) {
 
       if (!data.length) {
         res.status(404).json({ success: false, error: 'That Twitch channel could not be found.' });
+        return false;
       } else {
         req.body.options = Object.assign(req.body.options || {}, { user_id: data[0].id });
         return {
@@ -305,7 +308,6 @@ async function verifyFeed (req, res) {
           icon: data[0].profile_image_url
         };
       }
-      break;
     }
 
     // RSS

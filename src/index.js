@@ -86,15 +86,19 @@ async function start(gw) {
 }
 
 async function setTwitchToken() {
-  const { body: twitch } = await superagent.post('https://id.twitch.tv/oauth2/token')
-    .query({
-      client_id: config.twitchClient,
-      client_secret: config.twitchSecret,
-      grant_type: 'client_credentials',
-      scope: 'user:read:email'
-    });
-  app.locals.twitchToken = twitch.access_token;
-  setTimeout(() => setTwitchToken(), twitch.expires_in);
+  try {
+    const { body: twitch } = await superagent.post('https://id.twitch.tv/oauth2/token')
+      .query({
+        client_id: config.twitchClient,
+        client_secret: config.twitchSecret,
+        grant_type: 'client_credentials',
+        scope: 'user:read:email'
+      });
+    app.locals.twitchToken = twitch.access_token;
+    setTimeout(() => setTwitchToken(), twitch.expires_in);
+  } catch (e) {
+    logger.error(`Unable to get Twitch token: ${e.message}`, { src: 'twitchToken' });
+  }
 }
 
 logger.info(`Running in ${isProduction ? 'production' : 'development'} environment`, { src: 'process' });
